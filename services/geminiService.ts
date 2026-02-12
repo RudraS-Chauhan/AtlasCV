@@ -135,21 +135,23 @@ const extractJson = (text: string): string => {
 };
 
 const getApiKey = (): string | undefined => {
-  if (typeof process !== 'undefined' && process.env) {
-    if (process.env.API_KEY) return process.env.API_KEY;
-    if (process.env.REACT_APP_API_KEY) return process.env.REACT_APP_API_KEY;
-    if (process.env.NEXT_PUBLIC_API_KEY) return process.env.NEXT_PUBLIC_API_KEY;
-    if (process.env.VITE_API_KEY) return process.env.VITE_API_KEY;
-  }
+  // 1. Try Standard Vite Environment Variable (Recommended)
   try {
-     // @ts-ignore
-     if (typeof import.meta !== 'undefined' && import.meta.env) {
-       // @ts-ignore
-       if (import.meta.env.VITE_API_KEY) return import.meta.env.VITE_API_KEY;
-       // @ts-ignore
-       if (import.meta.env.API_KEY) return import.meta.env.API_KEY;
-     }
+    // @ts-ignore
+    if (import.meta && import.meta.env) {
+      // @ts-ignore
+      if (import.meta.env.VITE_API_KEY) return import.meta.env.VITE_API_KEY;
+    }
   } catch (e) {}
+
+  // 2. Try process.env (Node/Cloud)
+  try {
+    if (typeof process !== 'undefined' && process.env) {
+      if (process.env.VITE_API_KEY) return process.env.VITE_API_KEY;
+      if (process.env.API_KEY) return process.env.API_KEY;
+    }
+  } catch (e) {}
+
   return undefined;
 };
 
@@ -161,7 +163,11 @@ const generateWithFallback = async (
     config: any
 ) => {
     const apiKey = getApiKey();
-    if (!apiKey) throw new Error("API Key is missing.");
+    if (!apiKey) {
+      console.error("Gemini API Key is missing. Ensure VITE_API_KEY is set in your .env file.");
+      throw new Error("Missing API Key. Create a .env file with VITE_API_KEY=your_key_here and restart.");
+    }
+    
     const ai = new GoogleGenAI({ apiKey: apiKey });
 
     try {
@@ -228,7 +234,7 @@ export const generateJobToolkit = async (data: UserInput): Promise<JobToolkit> =
     if (msg.includes("429") || msg.includes("Quota") || msg.includes("Resource exhausted")) {
         throw new Error("API Limit Reached. Please wait a minute or try again.");
     }
-    throw new Error("AI Generation failed. " + (msg.length < 100 ? msg : "Please try again later."));
+    throw new Error("AI Generation failed. " + (msg.length < 100 ? msg : "Check API Key."));
   }
 };
 

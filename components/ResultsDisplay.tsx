@@ -313,19 +313,23 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
   });
 
   const getRazorpayKey = () => {
-    if (typeof process !== 'undefined' && process.env) {
-        if (process.env.RAZORPAY_KEY_ID) return process.env.RAZORPAY_KEY_ID;
-        if (process.env.REACT_APP_RAZORPAY_KEY_ID) return process.env.REACT_APP_RAZORPAY_KEY_ID;
-        if (process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID) return process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
-        if (process.env.VITE_RAZORPAY_KEY_ID) return process.env.VITE_RAZORPAY_KEY_ID;
-    }
+    // 1. Try Vite env var (Recommended)
     try {
         // @ts-ignore
         if (import.meta && import.meta.env) {
-             // @ts-ignore
-             if (import.meta.env.VITE_RAZORPAY_KEY_ID) return import.meta.env.VITE_RAZORPAY_KEY_ID;
+            // @ts-ignore
+            if (import.meta.env.VITE_RAZORPAY_KEY_ID) return import.meta.env.VITE_RAZORPAY_KEY_ID;
         }
     } catch(e) {}
+    
+    // 2. Try process.env
+    if (typeof process !== 'undefined' && process.env) {
+        if (process.env.VITE_RAZORPAY_KEY_ID) return process.env.VITE_RAZORPAY_KEY_ID;
+        if (process.env.RAZORPAY_KEY_ID) return process.env.RAZORPAY_KEY_ID;
+        if (process.env.REACT_APP_RAZORPAY_KEY_ID) return process.env.REACT_APP_RAZORPAY_KEY_ID;
+        if (process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID) return process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+    }
+
     return null;
   };
 
@@ -734,7 +738,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
                                      </div>
                                      <div className="h-12 w-px bg-slate-100"></div>
                                      <div className="text-center">
-                                         <div className={`text-2xl font-bold mb-1 ${resumeAnalysis.jobFitPrediction === 'High' ? 'text-green-600' : resumeAnalysis.jobFitPrediction === 'Medium' ? 'text-amber-500' : 'text-red-500'}`}>
+                                         <div className={`text-2xl font-bold mb-1 ${(resumeAnalysis.jobFitPrediction || 'Medium') === 'High' ? 'text-green-600' : ((resumeAnalysis.jobFitPrediction || 'Medium') === 'Medium' ? 'text-amber-500' : 'text-red-500')}`}>
                                              {resumeAnalysis.jobFitPrediction || 'Medium'}
                                          </div>
                                          <div className="text-xs font-bold text-slate-400 uppercase tracking-wide">Interview Chance</div>
