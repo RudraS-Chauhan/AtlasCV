@@ -20,6 +20,15 @@ const responseSchema = {
     },
     coldEmail: { type: Type.STRING, description: "A short, punchy cold email to a recruiter/founder (subject + body)." },
     salaryNegotiation: { type: Type.STRING, description: "A professional script to negotiate salary after receiving an offer." },
+    recruiterPsychology: { type: Type.STRING, description: "A paragraph explaining deep subconscious reasons why a recruiter might accept or reject this specific profile, and what 'vibe' it gives off." },
+    internshipHunter: {
+        type: Type.OBJECT,
+        properties: {
+            searchQueries: { type: Type.ARRAY, items: { type: Type.STRING }, description: "5 highly specific Boolean search strings for LinkedIn/Google to find hidden roles (e.g. site:linkedin.com 'react' AND 'intern')." },
+            platforms: { type: Type.ARRAY, items: { type: Type.STRING }, description: "3 specific platforms or websites best suited for this role (e.g. Wellfound for startups, etc)." },
+            strategy: { type: Type.STRING, description: "One actionable 'Hack' to get noticed for this specific role." }
+        }
+    },
     mockInterview: {
       type: Type.OBJECT,
       properties: {
@@ -184,15 +193,19 @@ export const generateJobToolkit = async (data: UserInput): Promise<JobToolkit> =
   const systemInstruction = `
     You are "JobHero AI", an elite career strategist.
     
-    **RULES**: 
-    1. NO hallucination. Use provided details only for Resume/CV.
-    2. Professional formatting is non-negotiable.
+    **CRITICAL DATA INTEGRITY RULES**: 
+    1. **NO HALLUCINATION**: You must ONLY use the details provided in the 'User Details' section. 
+    2. **DO NOT ADD** fake certifications, internships, work experience, or skills that the user has not explicitly listed. 
+    3. If a field (e.g., Certifications, Internships, Projects) is empty, "None", or "None provided" in the input, **DO NOT CREATE A SECTION FOR IT** in the resume. 
+    4. Do not infer or guess start/end dates if not provided.
+    5. Professional formatting is non-negotiable.
 
     --- OUTPUT REQUIREMENTS ---
 
     1. **Resume**:
-       - Standard headers: 📝 SUMMARY, 🎯 OBJECTIVE, 🎓 EDUCATION, 💡 SKILLS, 🚀 PROJECTS, 🏢 EXPERIENCE, 📜 CERTIFICATIONS.
+       - Standard headers: 📝 SUMMARY, 🎯 OBJECTIVE, 🎓 EDUCATION, 💡 SKILLS, 🚀 PROJECTS (Only if provided), 🏢 EXPERIENCE (Only if provided), 📜 CERTIFICATIONS (Only if provided).
        - Use "➤" bullets.
+       - **Strictly omit** headers for empty data sections.
 
     2. **Cover Letter**:
        - STRICT Business Letter Format:
@@ -230,6 +243,14 @@ export const generateJobToolkit = async (data: UserInput): Promise<JobToolkit> =
 
     6. **Salary Negotiation Script**:
        - Professional script to counter-offer a salary proposal politely but firmly.
+    
+    7. **Recruiter Psychology**:
+       - Analyze the user's profile and explain WHY a recruiter might accept or reject them. Be brutally honest but constructive. Mention specific red flags or green flags.
+
+    8. **Internship Hunter**:
+       - Generate 5 highly specific "Boolean Search Strings" for Google/LinkedIn jobs.
+       - Suggest 3 specific platforms (besides LinkedIn) relevant to their tech stack.
+       - One specific "Strategy/Hack" to get noticed.
 
     Return JSON.
   `;
@@ -237,8 +258,12 @@ export const generateJobToolkit = async (data: UserInput): Promise<JobToolkit> =
   const userContent = `
     User Details:
     Name: ${data.fullName} | Role: ${data.jobRoleTarget} | Company: ${data.company}
-    Skills: ${data.skills} | Exp: ${data.internships} | Years of Experience: ${data.yearsOfExperience} | Projects: ${data.projects}
+    Skills: ${data.skills || "None provided"} 
+    Exp: ${data.internships || "None provided"} 
+    Years of Experience: ${data.yearsOfExperience || "None provided"} 
+    Projects: ${data.projects || "None provided"}
     Edu: ${data.education} | Bio: ${data.careerObjective}
+    Certifications: ${data.certifications || "None provided"}
   `;
 
   const config = {

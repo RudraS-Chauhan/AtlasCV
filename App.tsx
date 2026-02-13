@@ -168,8 +168,11 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
 
-  // Initialize Theme
+  // Initialize Theme and Scroll Position
   useEffect(() => {
+    // Force scroll to top on mount
+    window.scrollTo(0, 0);
+
     if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       setIsDarkMode(true);
       document.documentElement.classList.add('dark');
@@ -214,6 +217,15 @@ const App: React.FC = () => {
     setJobToolkit(null);
     setError(null);
     setIsLoading(false);
+    setTimeout(() => window.scrollTo(0, 0), 100);
+  };
+
+  const handleRetry = () => {
+    if (userInput) {
+        handleSubmit(userInput);
+    } else {
+        handleReset();
+    }
   };
 
   const handleResetKeyDown = (e: React.KeyboardEvent) => {
@@ -251,6 +263,15 @@ const App: React.FC = () => {
           return "A network error occurred. Please check your internet connection.";
       }
       return "Ensure your input is valid and try again. If the issue persists, contact support.";
+  };
+
+  const getErrorTitle = (errorMsg: string) => {
+      const msg = errorMsg.toLowerCase();
+      if (msg.includes('network') || msg.includes('fetch') || msg.includes('connection')) return "Connection Issue";
+      if (msg.includes('429') || msg.includes('quota')) return "Server Busy";
+      if (msg.includes('safety') || msg.includes('blocked')) return "Content Flagged";
+      if (msg.includes('503') || msg.includes('overloaded')) return "Service Overloaded";
+      return "Something Went Wrong";
   };
 
   return (
@@ -357,7 +378,7 @@ const App: React.FC = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
                     </svg>
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Something Went Wrong</h3>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{getErrorTitle(error)}</h3>
                 <p className="text-slate-600 dark:text-slate-300 mb-6">{error}</p>
                 <div className="text-sm text-slate-500 dark:text-slate-400 mb-6 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg text-left border border-slate-100 dark:border-slate-700">
                   <strong className="text-slate-700 dark:text-slate-300 block mb-2">Troubleshooting Tips:</strong>
@@ -366,13 +387,13 @@ const App: React.FC = () => {
                     <li>Check your API Key configuration in the environment.</li>
                   </ul>
                 </div>
-                <div className="flex gap-3 justify-center">
+                <div className="flex gap-3 justify-center flex-wrap">
                     {!jobToolkit && (
                       <button
-                          onClick={handleReset}
+                          onClick={handleRetry}
                           className="inline-flex items-center px-6 py-2.5 border border-transparent text-sm font-bold rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition-all hover:-translate-y-0.5"
                       >
-                          Try Again
+                          Retry Generation
                       </button>
                     )}
                     {jobToolkit && (
@@ -389,6 +410,12 @@ const App: React.FC = () => {
                     >
                         Copy Error
                     </button>
+                     <a
+                        href={`mailto:rudrasinghchauhan2007@gmail.com?subject=${encodeURIComponent(`JobHero AI Error: ${getErrorTitle(error)}`)}&body=${encodeURIComponent(`Error Details:\n${error}`)}`}
+                        className="inline-flex items-center px-4 py-2.5 border border-slate-200 dark:border-slate-700 text-sm font-medium rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+                    >
+                        Contact Support
+                    </a>
                 </div>
             </div>
         )}

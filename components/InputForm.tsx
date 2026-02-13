@@ -44,8 +44,9 @@ const TextareaField: React.FC<{
     onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void; 
     rows?: number; 
     required?: boolean; 
-    helpText?: string; 
-}> = ({ id, label, placeholder, value, onChange, rows = 3, required = false, helpText }) => (
+    helpText?: string;
+    autoFocus?: boolean;
+}> = ({ id, label, placeholder, value, onChange, rows = 3, required = false, helpText, autoFocus = false }) => (
     <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
       <label htmlFor={id} className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
         {label} {required && <span className="text-red-500" aria-hidden="true">*</span>}
@@ -54,6 +55,7 @@ const TextareaField: React.FC<{
         id={id}
         name={id}
         rows={rows}
+        autoFocus={autoFocus}
         className="block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-3 transition-all hover:border-blue-300 dark:hover:border-blue-500 placeholder:text-slate-400 dark:placeholder:text-slate-600"
         placeholder={placeholder}
         value={value}
@@ -351,7 +353,7 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading }) => {
                           <TextareaField id="internships" label="Experience / Internships" placeholder="Role, Company, Date. What did you achieve?" value={formData.internships} onChange={handleChange} rows={4} helpText="If none, type 'Fresher - Looking for first opportunity'." autoFocus />
                       </div>
                       <div className="md:col-span-1">
-                          <InputField id="yearsOfExperience" label="Years of Exp." placeholder="e.g. 0, 2.5" value={formData.yearsOfExperience} onChange={handleChange} />
+                          <InputField id="yearsOfExperience" label="Years of Experience" placeholder="e.g. 2 Years (Optional)" value={formData.yearsOfExperience} onChange={handleChange} />
                       </div>
                   </div>
                   <TextareaField id="projects" label="Key Projects" placeholder="1. Project Name: Description... [Link: example.com]" value={formData.projects} onChange={handleChange} required rows={6} helpText="Include links (GitHub/Demo) if possible! It proves your work is real." />

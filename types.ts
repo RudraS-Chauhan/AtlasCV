@@ -26,6 +26,12 @@ export interface RoadmapStep {
   tools: string[];
 }
 
+export interface InternshipHunter {
+    searchQueries: string[];
+    platforms: string[];
+    strategy: string;
+}
+
 export interface JobToolkit {
   resume: string;
   coverLetter: string;
@@ -45,6 +51,8 @@ export interface JobToolkit {
   careerRoadmap: RoadmapStep[];
   coldEmail: string;
   salaryNegotiation: string;
+  recruiterPsychology: string;
+  internshipHunter: InternshipHunter;
 }
 
 export interface ResumeAnalysis {
