@@ -216,6 +216,13 @@ const App: React.FC = () => {
     setIsLoading(false);
   };
 
+  const handleResetKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleReset();
+    }
+  };
+
   const handleRegenerateRoadmap = async (newRole: string, useThinkingModel: boolean) => {
     if (!userInput) return;
     setError(null); // Clear previous errors
@@ -261,7 +268,14 @@ const App: React.FC = () => {
 
       <header className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 transition-all duration-300">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-2 cursor-pointer group" onClick={handleReset}>
+          <div 
+            className="flex items-center space-x-2 cursor-pointer group" 
+            onClick={handleReset}
+            onKeyDown={handleResetKeyDown}
+            role="button"
+            tabIndex={0}
+            aria-label="Reset Application"
+          >
             <LogoIcon className="h-8 w-8 text-blue-600 group-hover:scale-110 transition-transform duration-300" />
             <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">JobHero<span className="text-blue-600">.ai</span></h1>
           </div>
@@ -352,22 +366,30 @@ const App: React.FC = () => {
                     <li>Check your API Key configuration in the environment.</li>
                   </ul>
                 </div>
-                {!jobToolkit && (
-                  <button
-                      onClick={handleReset}
-                      className="inline-flex items-center px-6 py-2.5 border border-transparent text-sm font-bold rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition-all hover:-translate-y-0.5"
-                  >
-                      Try Again
-                  </button>
-                )}
-                {jobToolkit && (
-                   <button
-                      onClick={() => setError(null)}
-                      className="inline-flex items-center px-6 py-2.5 border border-transparent text-sm font-bold rounded-lg shadow-sm text-white bg-slate-600 hover:bg-slate-700 transition-all"
-                  >
-                      Dismiss
-                  </button>
-                )}
+                <div className="flex gap-3 justify-center">
+                    {!jobToolkit && (
+                      <button
+                          onClick={handleReset}
+                          className="inline-flex items-center px-6 py-2.5 border border-transparent text-sm font-bold rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition-all hover:-translate-y-0.5"
+                      >
+                          Try Again
+                      </button>
+                    )}
+                    {jobToolkit && (
+                       <button
+                          onClick={() => setError(null)}
+                          className="inline-flex items-center px-6 py-2.5 border border-transparent text-sm font-bold rounded-lg shadow-sm text-white bg-slate-600 hover:bg-slate-700 transition-all"
+                      >
+                          Dismiss
+                      </button>
+                    )}
+                     <button
+                        onClick={() => navigator.clipboard.writeText(error)}
+                        className="inline-flex items-center px-4 py-2.5 border border-slate-200 dark:border-slate-700 text-sm font-medium rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+                    >
+                        Copy Error
+                    </button>
+                </div>
             </div>
         )}
 

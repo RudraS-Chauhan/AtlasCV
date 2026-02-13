@@ -88,15 +88,17 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ text, template, is
     } else if (template === 'Elegant') {
         containerClass += " font-serif text-slate-800 max-w-3xl mx-auto border-t-8 border-amber-700";
         nameClass = "text-5xl font-serif text-slate-900 mb-4 tracking-tight";
-        contactClass = "text-sm text-amber-700 font-medium uppercase tracking-widest mb-10";
+        // Larger contact details
+        contactClass = "text-base text-amber-700 font-medium uppercase tracking-widest mb-10";
         sectionTitleClass = "text-md font-bold text-slate-900 uppercase tracking-[0.15em] mt-8 mb-4 border-b border-amber-200 pb-2";
         bodyClass += " text-slate-700 leading-7";
     } else if (template === 'Executive') {
-        containerClass += " font-sans bg-white text-slate-900 border-l-[12px] border-slate-800";
-        nameClass = "text-4xl font-extrabold text-slate-900 mb-1 uppercase tracking-tighter";
-        contactClass = "text-xs font-bold text-white bg-slate-800 inline-block px-3 py-1 mb-6 mt-2";
-        sectionTitleClass = "font-black text-white bg-slate-800 px-2 py-1 uppercase text-sm mt-6 mb-3 inline-block tracking-wide";
-        bodyClass += " text-slate-800 font-medium";
+        // Dark background with thick left border
+        containerClass += " font-sans bg-slate-900 text-slate-300 border-l-[12px] border-slate-700";
+        nameClass = "text-4xl font-extrabold text-white mb-1 uppercase tracking-tighter";
+        contactClass = "text-xs font-bold text-slate-900 bg-slate-200 inline-block px-3 py-1 mb-6 mt-2 rounded-sm";
+        sectionTitleClass = "font-black text-slate-900 bg-white px-2 py-1 uppercase text-sm mt-6 mb-3 inline-block tracking-wide transform -skew-x-12";
+        bodyClass += " text-slate-300 font-medium";
     }
 
     const renderSection = (title: string, contentKey: string) => {
@@ -114,8 +116,8 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ text, template, is
                      <h3 className={sectionTitleClass}>{title}</h3>
                      <div className="flex flex-wrap gap-2 mt-2">
                          {skillList.map((skill, idx) => (
-                             <span key={idx} className="inline-flex items-center gap-1.5 px-2 py-1 bg-slate-100 border border-slate-200 rounded text-xs font-medium text-slate-700">
-                                 <TechIcon name={skill} className="w-3.5 h-3.5" />
+                             <span key={idx} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 border rounded-md text-xs font-semibold transition-colors ${template === 'Executive' ? 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'}`}>
+                                 <TechIcon name={skill} className="w-4 h-4" />
                                  {skill}
                              </span>
                          ))}

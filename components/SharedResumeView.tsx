@@ -3,6 +3,7 @@ import { ResumePreview, TemplateType } from './ResumePreview';
 import { LogoIcon } from './icons/LogoIcon';
 import { LinkedInIcon } from './icons/LinkedInIcon';
 import { FacebookIcon } from './icons/FacebookIcon';
+import { TwitterIcon } from './icons/TwitterIcon';
 import { CopyIcon } from './icons/CopyIcon';
 import { CheckIcon } from './icons/CheckIcon';
 
@@ -39,7 +40,7 @@ export const SharedResumeView: React.FC = () => {
         }
     }, []);
 
-    const handleSocialShare = (platform: 'linkedin' | 'facebook') => {
+    const handleSocialShare = (platform: 'linkedin' | 'facebook' | 'twitter') => {
         if (!data) return;
         const url = encodeURIComponent(window.location.href);
         const text = encodeURIComponent(`Check out ${data.n}'s professional resume created with JobHero AI! 🚀`);
@@ -49,6 +50,8 @@ export const SharedResumeView: React.FC = () => {
             shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${url}`;
         } else if (platform === 'facebook') {
             shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
+        } else if (platform === 'twitter') {
+            shareUrl = `https://twitter.com/intent/tweet?url=${url}&text=${text}`;
         }
         
         window.open(shareUrl, '_blank', 'width=600,height=400');
@@ -129,6 +132,9 @@ export const SharedResumeView: React.FC = () => {
                     <div className="flex items-center gap-3">
                         <button onClick={() => handleSocialShare('linkedin')} className="p-2.5 rounded-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 text-[#0077b5] dark:text-[#3b82f6] transition-colors" aria-label="Share on LinkedIn" title="Share on LinkedIn">
                             <LinkedInIcon className="w-5 h-5" />
+                        </button>
+                        <button onClick={() => handleSocialShare('twitter')} className="p-2.5 rounded-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 text-[#1DA1F2] transition-colors" aria-label="Share on Twitter" title="Share on Twitter">
+                            <TwitterIcon className="w-5 h-5" />
                         </button>
                         <button onClick={() => handleSocialShare('facebook')} className="p-2.5 rounded-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 text-[#1877F2] transition-colors" aria-label="Share on Facebook" title="Share on Facebook">
                             <FacebookIcon className="w-5 h-5" />

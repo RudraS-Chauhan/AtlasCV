@@ -14,6 +14,7 @@ import { RefreshIcon } from './icons/RefreshIcon';
 import { ArrowRightIcon } from './icons/ArrowRightIcon';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { ShareIcon } from './icons/ShareIcon';
+import { TechIcon } from './icons/TechIcons';
 
 declare global {
     interface Window {
@@ -48,6 +49,102 @@ const Tooltip = ({ text, children, position = 'top' }: { text: string; children?
     </div>
   </div>
 );
+
+const FormatCoverLetter: React.FC<{ text: string }> = ({ text }) => {
+    // Split text by bracketed placeholders like [Date], [Company Name]
+    const parts = text.split(/(\[.*?\])/g);
+    
+    return (
+        <div className="whitespace-pre-wrap leading-relaxed text-slate-700 dark:text-slate-300 font-serif text-base">
+            {parts.map((part, i) => {
+                if (part.startsWith('[') && part.endsWith(']')) {
+                    return (
+                        <span 
+                            key={i} 
+                            className="bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-100 px-2 py-0.5 rounded border border-dashed border-amber-400 dark:border-amber-600 font-medium mx-1 shadow-sm transition-colors hover:bg-amber-200 dark:hover:bg-amber-800/60 cursor-text"
+                            title="Editable Placeholder"
+                        >
+                            {part}
+                        </span>
+                    );
+                }
+                return <span key={i}>{part}</span>;
+            })}
+        </div>
+    );
+};
+
+const RoadmapStepItem: React.FC<{ step: any, index: number }> = ({ step, index }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setIsExpanded(!isExpanded);
+        }
+    };
+
+    return (
+        <div 
+            className="relative pl-8 sm:pl-32 py-3 group focus:outline-none"
+        >
+            {/* Timeline Line */}
+            <div className="absolute left-2 sm:left-0 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700 group-hover:bg-blue-400 dark:group-hover:bg-blue-600 transition-colors"></div>
+            
+            {/* Timeline Dot */}
+            <div className={`absolute left-[0.2rem] sm:-left-[0.35rem] top-6 w-4 h-4 rounded-full border-2 border-white dark:border-slate-900 transition-all duration-300 z-10 ${isExpanded ? 'bg-blue-600 scale-125 ring-4 ring-blue-100 dark:ring-blue-900/30' : 'bg-slate-300 dark:bg-slate-600 group-hover:bg-blue-500 group-hover:scale-110'}`}></div>
+
+            {/* Time Label (Desktop) */}
+            <div className={`hidden sm:block absolute left-4 w-24 text-right top-5 text-xs font-bold transition-colors ${isExpanded ? 'text-blue-600' : 'text-slate-400 group-hover:text-blue-500'}`}>
+                {step.duration}
+            </div>
+
+            {/* Content Card */}
+            <div 
+                className={`bg-white dark:bg-slate-800 rounded-xl border transition-all duration-300 overflow-hidden cursor-pointer ${
+                    isExpanded 
+                        ? 'shadow-lg border-blue-200 dark:border-blue-800 ring-1 ring-blue-100 dark:ring-blue-900/30' 
+                        : 'shadow-sm border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-md hover:-translate-y-1'
+                }`}
+                onClick={() => setIsExpanded(!isExpanded)}
+                onKeyDown={handleKeyDown}
+                role="button"
+                tabIndex={0}
+                aria-expanded={isExpanded}
+                aria-label={`Expand step ${index + 1}: ${step.title}`}
+            >
+                <div className="p-5 flex justify-between items-center">
+                    <div>
+                        <div className="sm:hidden text-xs font-bold text-blue-600 mb-1">{step.duration}</div>
+                        <h3 className={`text-lg font-bold transition-colors ${isExpanded ? 'text-blue-700 dark:text-blue-400' : 'text-slate-900 dark:text-white group-hover:text-blue-600'}`}>{step.title}</h3>
+                        <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide mt-1">{step.phase}</div>
+                    </div>
+                    <div className={`p-2 rounded-full transition-all duration-300 ${isExpanded ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 rotate-180' : 'bg-slate-50 dark:bg-slate-800 text-slate-400 group-hover:bg-blue-50 dark:group-hover:bg-slate-700 group-hover:text-blue-500'}`}>
+                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                        </svg>
+                    </div>
+                </div>
+                
+                <div className={`grid transition-[grid-template-rows] duration-500 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                    <div className="overflow-hidden">
+                        <div className="p-5 pt-0 border-t border-slate-100 dark:border-slate-700/50 mt-2 bg-slate-50/50 dark:bg-slate-800/50">
+                             <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-4 mt-4">{step.description}</p>
+                             <div className="flex flex-wrap gap-2">
+                                {step.tools?.map((tool: string, t: number) => (
+                                    <span key={t} className="px-2.5 py-1.5 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-md border border-slate-200 dark:border-slate-600 flex items-center gap-1.5 shadow-sm">
+                                        <TechIcon name={tool} className="w-3.5 h-3.5" />
+                                        {tool}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const SuccessModal = ({ email, transactionId }: { email: string, transactionId: string }) => (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-300">
@@ -97,20 +194,20 @@ const ActionButtons: React.FC<{
             <div className="flex gap-2">
                 {onShare && (
                      <Tooltip text="Get Shareable Link" position="bottom">
-                        <button onClick={onShare} className="bg-white dark:bg-slate-700 hover:bg-blue-50 dark:hover:bg-slate-600 text-blue-600 dark:text-blue-400 p-2 rounded-lg border border-blue-200 dark:border-blue-800 shadow-sm">
+                        <button onClick={onShare} className="bg-white dark:bg-slate-700 hover:bg-blue-50 dark:hover:bg-slate-600 text-blue-600 dark:text-blue-400 p-2 rounded-lg border border-blue-200 dark:border-blue-800 shadow-sm" aria-label="Share">
                             <ShareIcon className="h-5 w-5" />
                         </button>
                     </Tooltip>
                 )}
                 {onDownloadPDF && (
                     <Tooltip text="Download as PDF" position="bottom">
-                        <button onClick={onDownloadPDF} className="bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 p-2 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm">
+                        <button onClick={onDownloadPDF} className="bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 p-2 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm" aria-label="Download PDF">
                             <DownloadIcon className="h-5 w-5" />
                         </button>
                     </Tooltip>
                 )}
                 <Tooltip text="Copy to Clipboard" position="bottom">
-                    <button onClick={handleCopy} className="bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 p-2 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm">
+                    <button onClick={handleCopy} className="bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 p-2 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm" aria-label="Copy to Clipboard">
                         {copied ? <CheckIcon className="h-5 w-5 text-green-500" /> : <CopyIcon className="h-5 w-5" />}
                     </button>
                 </Tooltip>
@@ -147,6 +244,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [transactionId, setTransactionId] = useState('');
+  const [localError, setLocalError] = useState<string | null>(null);
   
   // State for LinkedIn Headline Swapping
   const [currentHeadline, setCurrentHeadline] = useState(toolkit.linkedin.headline);
@@ -205,11 +303,12 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
 
   const handleAnalyzeResume = async () => {
       setIsAnalyzing(true);
+      setLocalError(null);
       try {
           const result = await analyzeResume(toolkit.resume, userInput.jobRoleTarget);
           setResumeAnalysis(result);
       } catch (e) {
-          alert("Could not analyze resume. Try again.");
+          setLocalError("Unable to complete resume audit. Please check your connection and try again.");
       } finally {
           setIsAnalyzing(false);
       }
@@ -239,14 +338,27 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
     e.preventDefault();
     if (!newRoleInput.trim()) return;
     setIsRegeneratingRoadmap(true);
+    setLocalError(null);
     try {
       await onRegenerateRoadmap(newRoleInput, useThinkingModel);
       setNewRoleInput('');
     } catch (error) {
-      alert("Failed to update roadmap.");
+       // Error is handled in App.tsx via setError, but we catch it here to stop loading state
+       console.error("Roadmap update failed in view");
     } finally {
       setIsRegeneratingRoadmap(false);
     }
+  };
+
+  const handleToggleThinkingModel = () => {
+      setUseThinkingModel(!useThinkingModel);
+  };
+
+  const handleToggleKeyDown = (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleToggleThinkingModel();
+      }
   };
 
   const contentToCopy = (tab: Tab): string => {
@@ -261,6 +373,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
   return (
     <div className="max-w-6xl mx-auto">
       {showSuccessModal && <SuccessModal email={userInput.email} transactionId={transactionId} />}
+      
       <div className="flex flex-col sm:flex-row justify-between items-end gap-4 mb-0 px-4 sm:px-0">
         <div className="flex space-x-1 overflow-x-auto no-scrollbar w-full sm:w-auto">
           {tabs.map((tab) => (
@@ -287,19 +400,30 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
       </div>
 
       <div className="relative bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-b-xl rounded-tr-xl shadow-lg mt-0 min-h-[500px] transition-colors duration-300">
+        
+        {localError && (
+             <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-3 text-sm text-red-600 dark:text-red-300 animate-in fade-in slide-in-from-top-2">
+                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 flex-shrink-0">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                 </svg>
+                 {localError}
+                 <button onClick={() => setLocalError(null)} className="ml-auto hover:bg-red-100 dark:hover:bg-red-800/50 p-1 rounded">✕</button>
+             </div>
+        )}
+
         {activeTab === 'resume' && (
             <>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                      <ActionButtons textToCopy={contentToCopy('resume')} onDownloadPDF={() => handleDownloadPDF('resume')} onShare={handleGenerateShareLink}
                         templateSelector={
                            <div className="flex items-center bg-white dark:bg-slate-700 rounded-lg border px-2 py-1">
-                               <span className="text-xs font-semibold mr-2">TEMPLATE:</span>
-                               <select value={selectedTemplate} onChange={(e) => setSelectedTemplate(e.target.value as TemplateType)} className="text-xs border-none bg-transparent outline-none cursor-pointer">
-                                   <option value="Classic">Classic</option>
-                                   <option value="Modern">Modern</option>
-                                   <option value="Creative">Creative</option>
-                                   <option value="Elegant">Elegant {isProMember ? '' : '👑'}</option>
-                                   <option value="Executive">Executive {isProMember ? '' : '👑'}</option>
+                               <span className="text-xs font-semibold mr-2 text-slate-700 dark:text-slate-300">TEMPLATE:</span>
+                               <select value={selectedTemplate} onChange={(e) => setSelectedTemplate(e.target.value as TemplateType)} className="text-xs border-none bg-transparent outline-none cursor-pointer text-slate-900 dark:text-white">
+                                   <option value="Classic" className="text-slate-900">Classic</option>
+                                   <option value="Modern" className="text-slate-900">Modern</option>
+                                   <option value="Creative" className="text-slate-900">Creative</option>
+                                   <option value="Elegant" className="text-slate-900">Elegant {isProMember ? '' : '👑'}</option>
+                                   <option value="Executive" className="text-slate-900">Executive {isProMember ? '' : '👑'}</option>
                                </select>
                            </div>
                         }
@@ -330,12 +454,12 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
                                          <div className="text-xs font-bold text-slate-400">Fit</div>
                                      </div>
                                 </div>
-                                <div className="p-5 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-100">
+                                <div className="p-5 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-100 dark:border-red-900/50">
                                     <h4 className="font-bold text-red-900 dark:text-red-300 text-sm mb-2">Missing Keywords</h4>
                                     <div className="flex flex-wrap gap-2">
                                         {resumeAnalysis.missingKeywords?.length > 0 ? resumeAnalysis.missingKeywords.map((k, i) => (
-                                            <span key={i} className="px-2 py-1 bg-white border border-red-200 text-red-700 text-xs rounded-md">{k}</span>
-                                        )) : <span className="text-xs">None detected.</span>}
+                                            <span key={i} className="px-2 py-1 bg-white dark:bg-slate-800 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-xs rounded-md">{k}</span>
+                                        )) : <span className="text-xs text-slate-500 dark:text-slate-400">None detected.</span>}
                                     </div>
                                 </div>
                             </div>
@@ -353,12 +477,13 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
         {activeTab === 'coverLetter' && (
             <>
                 <ActionButtons textToCopy={contentToCopy('coverLetter')} onDownloadPDF={() => handleDownloadPDF('coverLetter')} />
-                <div className="prose dark:prose-invert max-w-none whitespace-pre-wrap leading-relaxed text-slate-700 dark:text-slate-300 pt-8 sm:pt-0 bg-white dark:bg-slate-900 p-8 shadow-sm border border-slate-100 dark:border-slate-700 rounded-lg min-h-[600px]">
-                    {toolkit.coverLetter}
+                <div className="p-8 shadow-sm border border-slate-100 dark:border-slate-700 rounded-lg min-h-[600px] bg-white dark:bg-slate-900 mt-6 sm:mt-0">
+                    <FormatCoverLetter text={toolkit.coverLetter} />
                 </div>
             </>
         )}
 
+        {/* ... (Other tabs remain the same but included in context) ... */}
         {activeTab === 'linkedin' && (
           <div className="space-y-6">
             <ActionButtons textToCopy={contentToCopy('linkedin')} />
@@ -418,36 +543,30 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800/50 flex flex-col sm:flex-row gap-4 items-end">
                 <div className="flex-grow w-full">
                    <label className="block text-xs font-bold text-blue-900 dark:text-blue-300 uppercase mb-1">Pivot to new role?</label>
-                   <input type="text" placeholder="e.g. 'AI Engineer'" className="block w-full rounded-md border-slate-300 dark:border-slate-600 p-2 text-sm" value={newRoleInput} onChange={(e) => setNewRoleInput(e.target.value)} />
+                   <input type="text" placeholder="e.g. 'AI Engineer'" className="block w-full rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 text-sm" value={newRoleInput} onChange={(e) => setNewRoleInput(e.target.value)} />
                 </div>
-                <div className="flex items-center gap-2 mb-2 cursor-pointer" onClick={() => setUseThinkingModel(!useThinkingModel)}>
+                <div 
+                    className="flex items-center gap-2 mb-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 rounded" 
+                    onClick={handleToggleThinkingModel}
+                    onKeyDown={handleToggleKeyDown}
+                    role="switch"
+                    aria-checked={useThinkingModel}
+                    tabIndex={0}
+                    aria-label="Toggle Deep Thinking Model"
+                >
                     <div className={`w-8 h-4 rounded-full p-0.5 transition-colors ${useThinkingModel ? 'bg-purple-600' : 'bg-slate-300'}`}>
                         <div className={`bg-white w-3 h-3 rounded-full shadow-md transform transition-transform ${useThinkingModel ? 'translate-x-4' : 'translate-x-0'}`}></div>
                     </div>
-                    <span className="text-xs font-bold text-slate-500">Deep Think</span>
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Deep Think</span>
                 </div>
-                <button onClick={handleRoadmapUpdate} disabled={isRegeneratingRoadmap} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-bold disabled:opacity-50">
+                <button onClick={handleRoadmapUpdate} disabled={isRegeneratingRoadmap} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-bold disabled:opacity-50 hover:bg-blue-700 transition-colors">
                     {isRegeneratingRoadmap ? 'Thinking...' : 'Regenerate'}
                 </button>
             </div>
             
-            <div className="relative border-l-2 border-slate-200 dark:border-slate-700 ml-4 space-y-12 pl-8 pb-4">
+            <div className="relative border-l-2 border-slate-200 dark:border-slate-700 ml-4 pb-4">
                 {Array.isArray(toolkit.careerRoadmap) ? toolkit.careerRoadmap.map((step, i) => (
-                    <div key={i} className="relative group">
-                        <div className="absolute -left-[41px] w-6 h-6 rounded-full border-4 border-white dark:border-slate-800 bg-blue-500 shadow-sm group-hover:scale-125 transition-transform"></div>
-                        <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 mb-1">
-                            <h3 className="text-xl font-bold text-slate-900 dark:text-white">{step.title}</h3>
-                            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500">{step.duration}</span>
-                        </div>
-                        <p className="text-slate-600 dark:text-slate-400 mb-3">{step.description}</p>
-                        <div className="flex flex-wrap gap-2">
-                            {step.tools?.map((tool, t) => (
-                                <span key={t} className="px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium rounded border border-blue-100 dark:border-blue-800">
-                                    {tool}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
+                    <RoadmapStepItem key={i} step={step} index={i} />
                 )) : (
                     <div className="p-4 bg-red-50 text-red-600 rounded">Legacy roadmap format. Please regenerate.</div>
                 )}
