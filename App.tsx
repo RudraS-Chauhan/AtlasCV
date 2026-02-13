@@ -19,6 +19,70 @@ const MoonIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+const ContactForm = () => {
+    const [form, setForm] = useState({ name: '', email: '', message: '' });
+    const [status, setStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        setStatus('submitting');
+        
+        // Simulate network delay before opening mail client
+        setTimeout(() => {
+            const subject = encodeURIComponent(`Support Request: ${form.name}`);
+            const body = encodeURIComponent(`Name: ${form.name}\nEmail: ${form.email}\n\nMessage:\n${form.message}`);
+            window.location.href = `mailto:rudrasinghchauhan2007@gmail.com?subject=${subject}&body=${body}`;
+            setStatus('success');
+            setForm({ name: '', email: '', message: '' });
+            setTimeout(() => setStatus('idle'), 5000);
+        }, 1000);
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-3 mt-4">
+            {status === 'success' ? (
+                <div className="p-4 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg text-sm font-bold text-center animate-in fade-in">
+                    ✅ Message prepared! Opening your email client...
+                </div>
+            ) : (
+                <>
+                    <input 
+                        type="text" 
+                        placeholder="Your Name" 
+                        className="w-full p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                        value={form.name}
+                        onChange={e => setForm({...form, name: e.target.value})}
+                        required
+                    />
+                    <input 
+                        type="email" 
+                        placeholder="Your Email" 
+                        className="w-full p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                        value={form.email}
+                        onChange={e => setForm({...form, email: e.target.value})}
+                        required
+                    />
+                    <textarea 
+                        placeholder="How can we help?" 
+                        rows={3}
+                        className="w-full p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none resize-none transition-all"
+                        value={form.message}
+                        onChange={e => setForm({...form, message: e.target.value})}
+                        required
+                    />
+                    <button 
+                        type="submit" 
+                        disabled={status === 'submitting'}
+                        className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50 shadow-sm"
+                    >
+                        {status === 'submitting' ? 'Sending...' : 'Send Message'}
+                    </button>
+                </>
+            )}
+        </form>
+    );
+};
+
 const HeroSection = () => (
   <div className="text-center mb-16 relative z-10">
     {/* Floating Badge */}
@@ -154,14 +218,32 @@ const App: React.FC = () => {
 
   const handleRegenerateRoadmap = async (newRole: string, useThinkingModel: boolean) => {
     if (!userInput) return;
+    setError(null); // Clear previous errors
     try {
       const newRoadmap = await regenerateCareerRoadmap(userInput, newRole, useThinkingModel);
       setJobToolkit((prev) => prev ? ({ ...prev, careerRoadmap: newRoadmap }) : null);
     } catch (err: any) {
       console.error(err);
       const msg = err instanceof Error ? err.message : "Failed to update roadmap";
-      alert(msg);
+      setError(msg);
     }
+  };
+
+  const getTroubleshootingTips = (errorMsg: string) => {
+      const msg = errorMsg.toLowerCase();
+      if (msg.includes('429') || msg.includes('quota')) {
+          return "The AI service is currently experiencing high traffic. Please wait 30-60 seconds and try again.";
+      }
+      if (msg.includes('503') || msg.includes('overloaded')) {
+          return "Our AI servers are currently overloaded. Please try again in a few moments.";
+      }
+      if (msg.includes('safety') || msg.includes('blocked')) {
+          return "The content was flagged by safety filters. Please try rephrasing your input to be more professional.";
+      }
+      if (msg.includes('network') || msg.includes('fetch')) {
+          return "A network error occurred. Please check your internet connection.";
+      }
+      return "Ensure your input is valid and try again. If the issue persists, contact support.";
   };
 
   return (
@@ -255,28 +337,37 @@ const App: React.FC = () => {
         )}
 
         {error && (
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl p-8 text-center border border-red-100 dark:border-red-900/30 max-w-lg mx-auto mt-10 animate-in shake" role="alert">
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl p-8 text-center border border-red-100 dark:border-red-900/30 max-w-lg mx-auto mt-10 mb-8 animate-in shake sticky top-24 z-40" role="alert">
                 <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
                     </svg>
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Generation Failed</h3>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Something Went Wrong</h3>
                 <p className="text-slate-600 dark:text-slate-300 mb-6">{error}</p>
                 <div className="text-sm text-slate-500 dark:text-slate-400 mb-6 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg text-left border border-slate-100 dark:border-slate-700">
-                  <strong className="text-slate-700 dark:text-slate-300 block mb-2">Troubleshooting:</strong>
+                  <strong className="text-slate-700 dark:text-slate-300 block mb-2">Troubleshooting Tips:</strong>
                   <ul className="list-disc ml-5 space-y-1">
-                    <li>Check your API Key configuration.</li>
-                    <li>The AI might be busy (quota exceeded). Wait 1 min.</li>
-                    <li>Try shorter input text.</li>
+                    <li>{getTroubleshootingTips(error)}</li>
+                    <li>Check your API Key configuration in the environment.</li>
                   </ul>
                 </div>
-                <button
-                    onClick={handleReset}
-                    className="inline-flex items-center px-6 py-2.5 border border-transparent text-sm font-bold rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition-all hover:-translate-y-0.5"
-                >
-                    Try Again
-                </button>
+                {!jobToolkit && (
+                  <button
+                      onClick={handleReset}
+                      className="inline-flex items-center px-6 py-2.5 border border-transparent text-sm font-bold rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition-all hover:-translate-y-0.5"
+                  >
+                      Try Again
+                  </button>
+                )}
+                {jobToolkit && (
+                   <button
+                      onClick={() => setError(null)}
+                      className="inline-flex items-center px-6 py-2.5 border border-transparent text-sm font-bold rounded-lg shadow-sm text-white bg-slate-600 hover:bg-slate-700 transition-all"
+                  >
+                      Dismiss
+                  </button>
+                )}
             </div>
         )}
 
@@ -290,8 +381,49 @@ const App: React.FC = () => {
         )}
       </main>
 
-      <footer className="text-center py-8 text-slate-400 dark:text-slate-500 text-sm relative z-10">
-        <p>&copy; {new Date().getFullYear()} JobHero AI. Built for the Future.</p>
+      <footer className="w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-12 relative z-10">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                {/* Brand */}
+                <div>
+                    <div className="flex items-center space-x-2 mb-6">
+                        <LogoIcon className="h-8 w-8 text-blue-600" />
+                        <span className="font-bold text-slate-900 dark:text-white text-xl">JobHero<span className="text-blue-600">.ai</span></span>
+                    </div>
+                    <p className="text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
+                        The #1 AI-powered career assistant helping students and freshers land their dream jobs with professional tools and guidance.
+                    </p>
+                </div>
+
+                {/* Contact / Support - Swapped to middle column and upgraded */}
+                <div>
+                    <h3 className="font-bold text-slate-900 dark:text-white mb-4 text-lg">Contact Support</h3>
+                    <p className="text-sm text-slate-500 mb-2">Have a question or billing issue? Drop us a message directly.</p>
+                    <ContactForm />
+                </div>
+
+                 {/* Legal */}
+                 <div>
+                    <h3 className="font-bold text-slate-900 dark:text-white mb-4 text-lg">Legal & Resources</h3>
+                    <div className="flex flex-col gap-3">
+                        <a href="#" className="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Privacy Policy</a>
+                        <a href="#" className="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Terms of Service</a>
+                        <a href="#" className="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Refund Policy</a>
+                        <a href="#" className="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">FAQs</a>
+                        
+                        <div className="mt-6">
+                            <h4 className="font-bold text-slate-900 dark:text-white mb-2 text-sm">Direct Email</h4>
+                            <a href="mailto:rudrasinghchauhan2007@gmail.com" className="text-sm text-blue-600 dark:text-blue-400 font-medium hover:underline">
+                                rudrasinghchauhan2007@gmail.com
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div className="border-t border-slate-100 dark:border-slate-800 mt-12 pt-8 text-center text-sm text-slate-400">
+                &copy; {new Date().getFullYear()} JobHero AI. All rights reserved.
+            </div>
+        </div>
       </footer>
     </div>
   );

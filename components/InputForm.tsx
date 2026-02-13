@@ -76,6 +76,7 @@ const MOCK_DATA: UserInput = {
     skills: "React, TypeScript, Node.js, Tailwind CSS, PostgreSQL, Python, Git, AWS (Basic)",
     projects: "1. TaskMaster AI: A productivity app using React & OpenAI API. [Demo: taskmaster.app]\n2. ShopEasy: Full-stack E-commerce platform with Stripe integration. [Repo: github.com/alexj/shopeasy]",
     internships: "Frontend Intern at StartupFlow (Summer 2024): Improved site performance by 40% and implemented new dashboard features.",
+    yearsOfExperience: "0-1 Years",
     certifications: "Meta Frontend Developer Professional Certificate",
     jobRoleTarget: "Frontend Engineer",
     company: "Innovative Tech Startups or Product Companies",
@@ -107,12 +108,14 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading }) => {
     if (typeof window !== 'undefined') {
         const saved = localStorage.getItem(STORAGE_KEY_DATA);
         if (saved) {
-            return JSON.parse(saved);
+            const parsed = JSON.parse(saved);
+            // Ensure yearsOfExperience is present if loading legacy data
+            return { ...parsed, yearsOfExperience: parsed.yearsOfExperience || '' };
         }
     }
     return {
         fullName: '', email: '', phone: '', linkedinGithub: '', careerObjective: '',
-        education: '', skills: '', projects: '', internships: '', certifications: '',
+        education: '', skills: '', projects: '', internships: '', yearsOfExperience: '', certifications: '',
         jobRoleTarget: '', company: '', whyThisRole: '', interests: '', currentYear: '',
     };
   });
@@ -195,7 +198,7 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading }) => {
       if (confirm("Are you sure you want to clear your progress? This cannot be undone.")) {
           const emptyData = {
               fullName: '', email: '', phone: '', linkedinGithub: '', careerObjective: '',
-              education: '', skills: '', projects: '', internships: '', certifications: '',
+              education: '', skills: '', projects: '', internships: '', yearsOfExperience: '', certifications: '',
               jobRoleTarget: '', company: '', whyThisRole: '', interests: '', currentYear: '',
           };
           setFormData(emptyData);
@@ -343,8 +346,15 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading }) => {
           {/* STEP 3: EXPERIENCE */}
           {currentStep === 3 && (
               <div className="space-y-6">
-                  <TextareaField id="projects" label="Key Projects" placeholder="1. Project Name: Description... [Link: example.com]" value={formData.projects} onChange={handleChange} required rows={6} helpText="Include links (GitHub/Demo) if possible! It proves your work is real." autoFocus />
-                  <TextareaField id="internships" label="Experience / Internships" placeholder="Role, Company, Date. What did you achieve?" value={formData.internships} onChange={handleChange} rows={4} helpText="If none, type 'Fresher - Looking for first opportunity'." />
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                      <div className="md:col-span-3">
+                          <TextareaField id="internships" label="Experience / Internships" placeholder="Role, Company, Date. What did you achieve?" value={formData.internships} onChange={handleChange} rows={4} helpText="If none, type 'Fresher - Looking for first opportunity'." autoFocus />
+                      </div>
+                      <div className="md:col-span-1">
+                          <InputField id="yearsOfExperience" label="Years of Exp." placeholder="e.g. 0, 2.5" value={formData.yearsOfExperience} onChange={handleChange} />
+                      </div>
+                  </div>
+                  <TextareaField id="projects" label="Key Projects" placeholder="1. Project Name: Description... [Link: example.com]" value={formData.projects} onChange={handleChange} required rows={6} helpText="Include links (GitHub/Demo) if possible! It proves your work is real." />
               </div>
           )}
 

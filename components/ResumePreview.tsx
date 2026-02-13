@@ -1,51 +1,37 @@
 import React, { useMemo } from 'react';
 import { UserInput } from '../types';
+import { TechIcon } from './icons/TechIcons';
 
 export type TemplateType = 'Classic' | 'Modern' | 'Creative' | 'Elegant' | 'Executive';
 
 const parseResume = (text: string) => {
     const sections: Record<string, string> = {};
-    
-    // Standardize section keys
     const sectionMap: Record<string, string> = {
-        'SUMMARY': 'SUMMARY',
-        'PROFESSIONAL SUMMARY': 'SUMMARY',
-        'OBJECTIVE': 'OBJECTIVE',
-        'CAREER OBJECTIVE': 'OBJECTIVE',
+        'SUMMARY': 'SUMMARY', 'PROFESSIONAL SUMMARY': 'SUMMARY',
+        'OBJECTIVE': 'OBJECTIVE', 'CAREER OBJECTIVE': 'OBJECTIVE',
         'EDUCATION': 'EDUCATION',
-        'SKILLS': 'SKILLS',
-        'TECHNICAL SKILLS': 'SKILLS',
-        'EXPERIENCE': 'EXPERIENCE',
-        'WORK EXPERIENCE': 'EXPERIENCE',
+        'SKILLS': 'SKILLS', 'TECHNICAL SKILLS': 'SKILLS',
+        'EXPERIENCE': 'EXPERIENCE', 'WORK EXPERIENCE': 'EXPERIENCE',
         'PROJECTS': 'PROJECTS',
-        'CERTIFICATIONS': 'CERTIFICATIONS',
-        'CERTIFICATES': 'CERTIFICATIONS'
+        'CERTIFICATIONS': 'CERTIFICATIONS', 'CERTIFICATES': 'CERTIFICATIONS'
     };
     
-    // Icons that might be used by AI
     const icons = ['📝', '🎯', '🎓', '💡', '🚀', '🏢', '📜'];
-    
     let currentSection = 'HEADER';
     const lines = text.split('\n');
     let buffer: string[] = [];
 
     lines.forEach(line => {
         const trimmed = line.trim();
-        const upper = trimmed.toUpperCase();
-        
-        const cleanUpper = upper.replace(/[*#]/g, '').trim();
+        const upper = trimmed.toUpperCase().replace(/[*#]/g, '').trim();
         const hasIcon = icons.some(icon => trimmed.includes(icon));
-        const isKeywordHeader = Object.keys(sectionMap).some(key => cleanUpper === key || cleanUpper === key + ':');
+        const isKeywordHeader = Object.keys(sectionMap).some(key => upper === key || upper === key + ':');
 
         if (hasIcon || isKeywordHeader) {
             let newSectionKey = '';
             for (const [key, value] of Object.entries(sectionMap)) {
-                if (cleanUpper.includes(key)) {
-                    newSectionKey = value;
-                    break;
-                }
+                if (upper.includes(key)) { newSectionKey = value; break; }
             }
-
             if (!newSectionKey && hasIcon) {
                 if (trimmed.includes('📝')) newSectionKey = 'SUMMARY';
                 else if (trimmed.includes('🎯')) newSectionKey = 'OBJECTIVE';
@@ -55,22 +41,15 @@ const parseResume = (text: string) => {
                 else if (trimmed.includes('🏢')) newSectionKey = 'EXPERIENCE';
                 else if (trimmed.includes('📜')) newSectionKey = 'CERTIFICATIONS';
             }
-
             if (newSectionKey) {
-                if (buffer.length > 0) {
-                    sections[currentSection] = buffer.join('\n').trim();
-                    buffer = [];
-                }
+                if (buffer.length > 0) { sections[currentSection] = buffer.join('\n').trim(); buffer = []; }
                 currentSection = newSectionKey;
                 return; 
             }
         }
-        
         buffer.push(line);
     });
-    
     if (buffer.length > 0) sections[currentSection] = buffer.join('\n').trim();
-    
     return sections;
 };
 
@@ -84,10 +63,8 @@ interface ResumePreviewProps {
 
 export const ResumePreview: React.FC<ResumePreviewProps> = ({ text, template, isBlurred, onUnlock, userInput }) => {
     const sections = useMemo(() => parseResume(text), [text]);
-    
     const clean = (txt: string) => txt?.replace(/➤/g, '•').trim() || "";
 
-    // IMPORTANT: Resumes are always on "white paper" even in dark mode
     let containerClass = "p-8 min-h-[800px] shadow-sm bg-white text-slate-800 text-sm leading-relaxed transition-all duration-300";
     let nameClass = "text-3xl font-bold uppercase tracking-wide";
     let contactClass = "text-sm text-slate-600 mt-1";
@@ -126,16 +103,37 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ text, template, is
         const key = Object.keys(sections).find(k => k.includes(contentKey)) || "";
         if (!key || !sections[key]) return null;
         
+        const content = clean(sections[key]);
+
+        // Special rendering for SKILLS section to add icons
+        if (contentKey === 'SKILLS') {
+             // Split by commas or newlines to find individual skills
+             const skillList = content.split(/,|•|\n/).map(s => s.trim()).filter(s => s.length > 0);
+             return (
+                 <div className="mb-4">
+                     <h3 className={sectionTitleClass}>{title}</h3>
+                     <div className="flex flex-wrap gap-2 mt-2">
+                         {skillList.map((skill, idx) => (
+                             <span key={idx} className="inline-flex items-center gap-1.5 px-2 py-1 bg-slate-100 border border-slate-200 rounded text-xs font-medium text-slate-700">
+                                 <TechIcon name={skill} className="w-3.5 h-3.5" />
+                                 {skill}
+                             </span>
+                         ))}
+                     </div>
+                 </div>
+             );
+        }
+
         return (
             <div className="mb-4">
                 <h3 className={sectionTitleClass}>{title}</h3>
-                <div className={bodyClass}>{clean(sections[key])}</div>
+                <div className={bodyClass}>{content}</div>
             </div>
         );
     };
 
     return (
-        <div className="relative h-full" role="document" aria-label={`Resume Preview - ${template} Template`}>
+        <div className="relative h-full" role="document">
             <div className={`${containerClass} ${isBlurred ? 'blur-md select-none overflow-hidden h-[600px]' : 'h-full'}`}>
                 <div className={`mb-6 ${template === 'Modern' || template === 'Elegant' ? "text-center" : ""}`}>
                      <div className={nameClass}>{userInput.fullName || 'Your Name'}</div>
@@ -144,7 +142,6 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ text, template, is
                         {userInput.linkedinGithub && <span className="block sm:inline sm:ml-2">| {userInput.linkedinGithub}</span>}
                      </div>
                 </div>
-
                 {renderSection('Summary', 'SUMMARY')}
                 {renderSection('Education', 'EDUCATION')}
                 {renderSection('Skills', 'SKILLS')}
@@ -160,14 +157,9 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ text, template, is
                             <span className="text-2xl" aria-hidden="true">🔒</span>
                         </div>
                         <h3 className="text-xl font-bold text-white mb-2">Elite Template Locked</h3>
-                        <p className="text-slate-400 mb-6 text-sm">
-                            Unlock the <strong>{template}</strong> design and advanced AI analysis tools.
-                        </p>
-                        <button 
-                            onClick={onUnlock}
-                            className="w-full py-3 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-bold rounded-lg shadow-lg transform transition hover:scale-[1.02]"
-                        >
-                            Unlock Everything - ₹30
+                        <p className="text-slate-400 mb-6 text-sm">Unlock the <strong>{template}</strong> design and advanced AI analysis tools.</p>
+                        <button onClick={onUnlock} className="w-full py-3 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-bold rounded-lg shadow-lg transform transition hover:scale-[1.02]">
+                            Unlock Everything - ₹25
                         </button>
                     </div>
                 </div>

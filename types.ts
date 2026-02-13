@@ -10,6 +10,7 @@ export interface UserInput {
   projects: string;
   internships: string;
   certifications: string;
+  yearsOfExperience: string;
   jobRoleTarget: string;
   company: string;
   whyThisRole: string;
@@ -17,11 +18,20 @@ export interface UserInput {
   currentYear: string;
 }
 
+export interface RoadmapStep {
+  phase: string;
+  duration: string;
+  title: string;
+  description: string;
+  tools: string[];
+}
+
 export interface JobToolkit {
   resume: string;
   coverLetter: string;
   linkedin: {
     headline: string;
+    alternativeHeadlines: string[];
     bio: string;
   };
   mockInterview: {
@@ -32,13 +42,9 @@ export interface JobToolkit {
     }[];
     outro: string;
   };
-  careerRoadmap: {
-    learning: string;
-    projects: string;
-    internships: string;
-    networking: string;
-    milestones: string;
-  };
+  careerRoadmap: RoadmapStep[];
+  coldEmail: string;
+  salaryNegotiation: string;
 }
 
 export interface ResumeAnalysis {

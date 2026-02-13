@@ -5,63 +5,77 @@ const responseSchema = {
   type: Type.OBJECT,
   properties: {
     resume: { type: Type.STRING, description: "A clean, ATS-friendly, one-page resume text." },
-    coverLetter: { type: Type.STRING, description: "A 150-200 word professional cover letter." },
+    coverLetter: { type: Type.STRING, description: "A formal 3-paragraph business cover letter with header." },
     linkedin: {
       type: Type.OBJECT,
       properties: {
-        headline: { type: Type.STRING, description: "A professional LinkedIn headline under 120 characters." },
-        bio: { type: Type.STRING, description: "A LinkedIn 'About Me' bio under 250 words." },
+        headline: { type: Type.STRING, description: "A professional, high-impact LinkedIn headline." },
+        alternativeHeadlines: { 
+            type: Type.ARRAY, 
+            items: { type: Type.STRING },
+            description: "5 alternative, keyword-optimized headlines (e.g. one for creative, one for analytical, one for leadership)." 
+        },
+        bio: { type: Type.STRING, description: "A compelling 'About Me' narrative (150-200 words)." },
       },
     },
+    coldEmail: { type: Type.STRING, description: "A short, punchy cold email to a recruiter/founder (subject + body)." },
+    salaryNegotiation: { type: Type.STRING, description: "A professional script to negotiate salary after receiving an offer." },
     mockInterview: {
       type: Type.OBJECT,
       properties: {
-        intro: { type: Type.STRING, description: "A greeting and explanation for the mock interview." },
+        intro: { type: Type.STRING, description: "Context for the interview simulation." },
         questions: {
           type: Type.ARRAY,
           items: {
             type: Type.OBJECT,
             properties: {
               question: { type: Type.STRING },
-              feedback: { type: Type.STRING, description: "Constructive feedback for a basic answer to the question." },
+              feedback: { type: Type.STRING, description: "Brief tip on how to answer this specific question." },
             },
           },
         },
-        outro: { type: Type.STRING, description: "An overall score (1-10) and tips to improve, concluding the interview." },
+        outro: { type: Type.STRING, description: "Closing encouragement." },
       },
     },
     careerRoadmap: {
-      type: Type.OBJECT,
-      properties: {
-        learning: { type: Type.STRING, description: "A checklist of courses and skills to master." },
-        projects: { type: Type.STRING, description: "A checklist of projects to build." },
-        internships: { type: Type.STRING, description: "A checklist of internship and freelancing tips." },
-        networking: { type: Type.STRING, description: "A checklist for networking on LinkedIn and at events." },
-        milestones: { type: Type.STRING, description: "A checklist for resume and interview milestones." },
-      },
+      type: Type.ARRAY,
+      description: "A chronological career progression plan.",
+      items: {
+        type: Type.OBJECT,
+        properties: {
+            phase: { type: Type.STRING, description: "e.g., 'Phase 1', 'Month 1-3'" },
+            duration: { type: Type.STRING, description: "Time period required e.g., '3 Months'" },
+            title: { type: Type.STRING, description: "Main focus area e.g., 'Foundations & Core Logic'" },
+            description: { type: Type.STRING, description: "Specific actionable goals." },
+            tools: { type: Type.ARRAY, items: { type: Type.STRING }, description: "List of 3-5 specific tools/tech to master." }
+        }
+      }
     },
   },
 };
 
 const roadmapSchema = {
-  type: Type.OBJECT,
-  properties: {
-    learning: { type: Type.STRING, description: "A checklist of courses and skills to master." },
-    projects: { type: Type.STRING, description: "A checklist of projects to build." },
-    internships: { type: Type.STRING, description: "A checklist of internship and freelancing tips." },
-    networking: { type: Type.STRING, description: "A checklist for networking on LinkedIn and at events." },
-    milestones: { type: Type.STRING, description: "A checklist for resume and interview milestones." },
-  },
+  type: Type.ARRAY,
+  items: {
+    type: Type.OBJECT,
+    properties: {
+        phase: { type: Type.STRING },
+        duration: { type: Type.STRING },
+        title: { type: Type.STRING },
+        description: { type: Type.STRING },
+        tools: { type: Type.ARRAY, items: { type: Type.STRING } }
+    }
+  }
 };
 
 const analysisSchema = {
   type: Type.OBJECT,
   properties: {
-    score: { type: Type.NUMBER, description: "A score out of 100 based on ATS best practices." },
-    strengths: { type: Type.ARRAY, items: { type: Type.STRING }, description: "List of 2-3 things done well." },
-    improvements: { type: Type.ARRAY, items: { type: Type.STRING }, description: "List of 2-3 specific actionable improvements." },
-    missingKeywords: { type: Type.ARRAY, items: { type: Type.STRING }, description: "List of 3-5 critical industry keywords missing from the resume for this role." },
-    jobFitPrediction: { type: Type.STRING, description: "Prediction of job fit: 'High', 'Medium', or 'Low'." },
+    score: { type: Type.NUMBER, description: "ATS Score 0-100." },
+    strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
+    improvements: { type: Type.ARRAY, items: { type: Type.STRING } },
+    missingKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
+    jobFitPrediction: { type: Type.STRING, description: "'High', 'Medium', or 'Low'" },
   },
 };
 
@@ -85,31 +99,34 @@ const profileImportSchema = {
 const extractJson = (text: string): string => {
   const startIndex = text.indexOf('{');
   const endIndex = text.lastIndexOf('}');
+  
+  // Try finding array if object not found (for roadmap regen)
+  if (startIndex === -1) {
+     const arrayStart = text.indexOf('[');
+     const arrayEnd = text.lastIndexOf(']');
+     if (arrayStart !== -1 && arrayEnd !== -1) {
+         return text.substring(arrayStart, arrayEnd + 1);
+     }
+  }
+
   if (startIndex === -1 || endIndex === -1) {
     console.warn("JSON Extraction Failed. Raw Text:", text);
-    throw new Error("Response did not contain valid JSON. The model might have been blocked or returned plain text. Check console for details.");
+    throw new Error("Response did not contain valid JSON.");
   }
   return text.substring(startIndex, endIndex + 1);
 };
 
 const getApiKey = (): string | undefined => {
-  // 1. Try Standard Vite Environment Variable (Recommended)
   try {
     // @ts-ignore
-    if (import.meta && import.meta.env) {
-      // @ts-ignore
-      if (import.meta.env.VITE_API_KEY) return import.meta.env.VITE_API_KEY;
-    }
+    if (import.meta && import.meta.env && import.meta.env.VITE_API_KEY) return import.meta.env.VITE_API_KEY;
   } catch (e) {}
-
-  // 2. Try process.env (Node/Cloud)
   try {
     if (typeof process !== 'undefined' && process.env) {
       if (process.env.VITE_API_KEY) return process.env.VITE_API_KEY;
       if (process.env.API_KEY) return process.env.API_KEY;
     }
   } catch (e) {}
-
   return undefined;
 };
 
@@ -121,15 +138,11 @@ const generateWithFallback = async (
     config: any
 ) => {
     const apiKey = getApiKey();
-    if (!apiKey) {
-      console.error("Gemini API Key is missing. Ensure VITE_API_KEY is set in your .env file.");
-      throw new Error("Missing API Key. Create a .env file with VITE_API_KEY=your_key_here and restart.");
-    }
+    if (!apiKey) throw new Error("Missing API Key.");
     
     const ai = new GoogleGenAI({ apiKey: apiKey });
 
     try {
-        console.log(`Attempting with primary model: ${primaryModel}`);
         const response = await ai.models.generateContent({
             model: primaryModel,
             contents: contents,
@@ -137,23 +150,13 @@ const generateWithFallback = async (
         });
         return response;
     } catch (error: any) {
-        console.warn(`Primary model ${primaryModel} failed. Error:`, error.message);
+        console.warn(`Primary model ${primaryModel} failed.`, error.message);
         
-        // Check if error is related to quota or availability
-        const isQuotaError = error.message?.includes('429') || 
-                             error.message?.includes('Quota') || 
-                             error.message?.includes('Resource exhausted') ||
-                             error.message?.includes('503');
+        const isQuotaError = error.message?.includes('429') || error.message?.includes('Quota') || error.message?.includes('503');
 
         if (isQuotaError && fallbackModel) {
-            console.log(`Quota Hit. Waiting 2s before falling back to: ${fallbackModel}`);
-            // Wait 2 seconds to let the API breathe
             await new Promise(resolve => setTimeout(resolve, 2000));
-
-            // Remove thinking config and systemInstruction (optional, but safer for lite models) for fallback if needed.
-            // Note: Lite models might support systemInstruction, but definitely not thinkingConfig.
             const { thinkingConfig, ...fallbackConfig } = config;
-            
             const response = await ai.models.generateContent({
                 model: fallbackModel,
                 contents: contents,
@@ -166,232 +169,148 @@ const generateWithFallback = async (
 };
 
 export const parseProfileData = async (text: string): Promise<Partial<UserInput>> => {
-    const systemInstruction = `
-      You are a data extraction assistant.
-      Extract relevant career profile information from the provided unstructured text (which could be a resume paste or LinkedIn profile dump).
-      
-      Map the data to the following fields:
-      - fullName
-      - email
-      - phone
-      - linkedinGithub (URLs found)
-      - careerObjective (Summary/About section)
-      - education (University, Degree, Year)
-      - skills (Comma separated list)
-      - projects (Title + Description)
-      - internships (Work Experience)
-      - certifications
-      - interests
-
-      Return a JSON object. If a field is not found, leave it as an empty string.
-    `;
-
-    const config = {
-      responseMimeType: "application/json",
-      responseSchema: profileImportSchema,
-      systemInstruction: systemInstruction,
-      temperature: 0.1, // Low temp for extraction accuracy
-    };
+    const systemInstruction = `Extract career profile info into JSON. Return empty strings if missing.`;
+    const config = { responseMimeType: "application/json", responseSchema: profileImportSchema, systemInstruction, temperature: 0.1 };
 
     try {
-      // Using Flash is sufficient for extraction
       const response = await generateWithFallback("gemini-3-flash-preview", "gemini-flash-lite-latest", text, config);
-      const jsonText = extractJson(response.text || "{}");
-      return JSON.parse(jsonText);
+      return JSON.parse(extractJson(response.text || "{}"));
     } catch (error) {
-      console.error("Profile Parsing Failed:", error);
-      throw new Error("Could not extract data from text.");
+      throw new Error("Could not extract data.");
     }
 };
 
 export const generateJobToolkit = async (data: UserInput): Promise<JobToolkit> => {
   const systemInstruction = `
-    You are "JobHero AI", a professional career assistant.
+    You are "JobHero AI", an elite career strategist.
     
-    **CRITICAL RULE**: You must NOT hallucinate. You must NOT add any skills, tools, or experiences that are not explicitly listed in the USER DETAILS.
+    **RULES**: 
+    1. NO hallucination. Use provided details only for Resume/CV.
+    2. Professional formatting is non-negotiable.
 
-    --- GENERATION RULES ---
+    --- OUTPUT REQUIREMENTS ---
 
-    1.  **Resume**:
-        - Create a clean, text-based, ATS-friendly resume.
-        - **IMPORTANT FORMATTING**: You MUST use the following exact headers with icons for sections:
-          📝 SUMMARY
-          🎯 OBJECTIVE
-          🎓 EDUCATION
-          💡 SKILLS
-          🚀 PROJECTS
-          🏢 EXPERIENCE
-          📜 CERTIFICATIONS
-        - **SKILLS SECTION**: List ONLY the skills found in the "Skills" input above.
-        - **EXPERIENCE/PROJECTS**: Use only the provided details.
-        - Use "➤" for bullets.
+    1. **Resume**:
+       - Standard headers: 📝 SUMMARY, 🎯 OBJECTIVE, 🎓 EDUCATION, 💡 SKILLS, 🚀 PROJECTS, 🏢 EXPERIENCE, 📜 CERTIFICATIONS.
+       - Use "➤" bullets.
 
-    2.  **Cover Letter**:
-        - Professional, 150-200 words.
-        - Reference ONLY the provided skills and reasons for applying.
+    2. **Cover Letter**:
+       - STRICT Business Letter Format:
+         [Date]
+         
+         [Hiring Manager Name]
+         [Hiring Manager Title]
+         [Company Name]
+         [Company Address]
+         
+         Dear [Hiring Manager Name or "Hiring Team"],
+         [Body Paragraph 1: Hook]
+         [Body Paragraph 2: Skills alignment]
+         [Body Paragraph 3: Closing]
+         
+         Sincerely,
+         [Name]
 
-    3.  **LinkedIn**:
-        - Headline: Under 120 chars, catchy.
-        - Bio: Under 250 words, professional narrative using provided info.
+    3. **LinkedIn**:
+       - Headline: Viral, high-impact, keyword-rich (e.g., "Full Stack Dev | React & Node.js | Building Scalable Apps").
+       - Provide 5 alternative headlines in 'alternativeHeadlines' array catering to different vibes (e.g., Professional, Creative, Founder-focused).
+       - Bio: First-person professional narrative. Engaging, authoritative, welcoming.
 
-    4.  **Mock Interview**:
-        - 5 relevant technical/behavioral questions for the "Job Role Target".
-        - Provide feedback assuming a basic student answer.
+    4. **Career Roadmap**:
+       - Generate a detailed, chronological flowchart array (4-6 steps) to master the role in 2025.
+       - For each step, strictly provide:
+         - **Phase**: e.g. "Phase 1"
+         - **Duration**: Specific time period (e.g. "Weeks 1-6")
+         - **Title**: Milestone name
+         - **Description**: Actionable goals
+         - **Tools**: Specific, trending modern tools (e.g. "Next.js 14", "Docker", "Supabase", "Kubernetes").
 
-    5.  **Career Roadmap**:
-        - 2-year checklist plan (Learning, Projects, Internships, Networking, Milestones).
-        - Recommend currently popular and relevant technologies or certifications for 2025.
+    5. **Cold Email**:
+       - Subject line + Short body (max 100 words) to send to a founder/recruiter asking for an opportunity.
 
-    Return ONLY a JSON object matching the schema.
+    6. **Salary Negotiation Script**:
+       - Professional script to counter-offer a salary proposal politely but firmly.
+
+    Return JSON.
   `;
 
   const userContent = `
-    --- USER DETAILS ---
-    Full Name: ${data.fullName}
-    Email: ${data.email}
-    Phone: ${data.phone}
-    LinkedIn/GitHub: ${data.linkedinGithub}
-    Career Objective: ${data.careerObjective}
-    Education: ${data.education}
-    Skills: ${data.skills} (ONLY USE THESE. DO NOT ADD OTHERS.)
-    Projects: ${data.projects}
-    Internships: ${data.internships}
-    Certifications: ${data.certifications}
-    Job Role Target: ${data.jobRoleTarget}
-    Company: ${data.company}
-    Why this role: ${data.whyThisRole}
-    Interests: ${data.interests}
-    Current Year: ${data.currentYear}
+    User Details:
+    Name: ${data.fullName} | Role: ${data.jobRoleTarget} | Company: ${data.company}
+    Skills: ${data.skills} | Exp: ${data.internships} | Years of Experience: ${data.yearsOfExperience} | Projects: ${data.projects}
+    Edu: ${data.education} | Bio: ${data.careerObjective}
   `;
-
-  const primaryModel = "gemini-3-flash-preview"; // Fast, high quota
-  const fallbackModel = "gemini-flash-lite-latest"; // Very fast, backup
 
   const config = {
     responseMimeType: "application/json",
     responseSchema: responseSchema,
-    temperature: 0.2,
+    temperature: 0.3,
     systemInstruction: systemInstruction,
-    safetySettings: [
-      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-    ]
   };
   
   try {
-    const response = await generateWithFallback(primaryModel, fallbackModel, userContent, config);
-    const jsonText = extractJson(response.text || "{}");
-    return JSON.parse(jsonText) as JobToolkit;
-
+    const response = await generateWithFallback("gemini-3-flash-preview", "gemini-flash-lite-latest", userContent, config);
+    return JSON.parse(extractJson(response.text || "{}")) as JobToolkit;
   } catch (error: any) {
-    console.error("Error calling Gemini API:", error);
-    let msg = error.message || error.toString();
-    if (msg.includes("429") || msg.includes("Quota") || msg.includes("Resource exhausted")) {
-        throw new Error("API Limit Reached. Please wait a minute or try again.");
-    }
-    throw new Error("AI Generation failed. " + (msg.length < 100 ? msg : "Check API Key."));
+    throw new Error("AI Generation failed: " + error.message);
   }
 };
 
 export const regenerateCareerRoadmap = async (data: UserInput, newRole: string, useThinkingModel: boolean = false): Promise<JobToolkit['careerRoadmap']> => {
-  // Use 'gemini-3-pro-preview' for deep thinking, fallback to flash
   const primaryModel = useThinkingModel ? "gemini-3-pro-preview" : "gemini-3-flash-preview";
-  const fallbackModel = "gemini-3-flash-preview";
   
   const systemInstruction = `
-    Act as a senior career strategist and technical mentor.
+    Act as a Senior Technical Career Coach.
+    Create a comprehensive, step-by-step career roadmap to become a "${newRole}" in 2025.
     
-    YOUR MISSION:
-    Generate a HYPER-SPECIFIC, BATTLE-TESTED 2-year roadmap. Do not provide generic advice.
-    
-    STRICT GUIDELINES FOR NICHE ADVICE:
-    1. **NO GENERIC FLUFF**: Never say "Learn Python" or "Networking". Say "Master Python AsyncIO and FastAPI" or "Join the 'PyData' Discord".
-    2. **EXACT TECH STACK**: List the specific libraries, frameworks, and tools used in 2025.
-    3. **REAL-WORLD PROJECTS**: Suggest projects that solve actual industry problems (e.g., "Build a distributed rate limiter with Redis" instead of "ToDo App").
-    4. **INSIDER KNOWLEDGE**: Mention specific certifications, newsletters, or thought leaders relevant to this exact niche.
-
-    OUTPUT SECTIONS:
-    1. **Learning Path**: Month-by-month granular breakdown of what to learn.
-    2. **Projects**: 2-3 portfolio-grade project ideas with technical complexity.
-    3. **Experience Strategy**: How to get the first gig (Open Source repos to contribute to, Freelance platforms, etc).
-    4. **Niche Networking**: Where the top 1% professionals hang out.
-    5. **Milestones**: Clear checkpoints for 3, 6, 12, and 24 months.
-    
-    Return JSON with fields: learning, projects, internships, networking, milestones.
+    Structure the response as a chronological flowchart array (4-6 steps).
+    For each step, strictly provide:
+    1. **Phase**: e.g., "Phase 1: Foundations", "Phase 2: Advanced Concepts".
+    2. **Duration**: Realistic time period (e.g., "Weeks 1-6").
+    3. **Title**: Clear milestone name.
+    4. **Description**: Actionable learning objectives.
+    5. **Tools**: A specific list of modern, trending tools/technologies to learn (e.g., "Next.js 14", "Supabase", "Tailwind").
   `;
 
-  const userContent = `
-    CONTEXT:
-    The user is a student/fresher (Education: ${data.education}, Year: ${data.currentYear}) who specifically wants to pivot into or master "${newRole}".
-  `;
+  const userContent = `User Education: ${data.education}. Current Skills: ${data.skills}. Years of Experience: ${data.yearsOfExperience}. Target: ${newRole}`;
 
   const config: any = {
       responseMimeType: "application/json",
-      responseSchema: roadmapSchema,
+      responseSchema: roadmapSchema, // Expecting Array
       systemInstruction: systemInstruction,
-      safetySettings: [
-          { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-          { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-          { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-          { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-      ]
   };
 
-  if (useThinkingModel) {
-      // Use max budget for Gemini 3 Pro
-      config.thinkingConfig = { thinkingBudget: 32768 }; 
-      // Do not set maxOutputTokens when using thinking budget
-  } else {
-      config.temperature = 0.4;
-  }
+  if (useThinkingModel) config.thinkingConfig = { thinkingBudget: 16000 }; 
 
   try {
-    const response = await generateWithFallback(primaryModel, fallbackModel, userContent, config);
-    const jsonText = extractJson(response.text || "{}");
-    return JSON.parse(jsonText) as JobToolkit['careerRoadmap'];
-  } catch (error: any) {
-    console.error("Error regenerating roadmap:", error);
-    let msg = error.message || error.toString();
-    if (msg.includes("429") || msg.includes("Quota")) {
-        throw new Error("Quota exceeded. Falling back to lite model...");
-    }
+    const response = await generateWithFallback(primaryModel, "gemini-3-flash-preview", userContent, config);
+    const jsonText = extractJson(response.text || "[]");
+    return JSON.parse(jsonText);
+  } catch (error) {
     throw new Error("Failed to regenerate roadmap.");
   }
 };
 
 export const analyzeResume = async (resumeText: string, jobRole: string): Promise<ResumeAnalysis> => {
   const systemInstruction = `
-    Act as a strict hiring manager.
-    
-    1. Provide an ATS Score (0-100).
-    2. List 3 key strengths.
-    3. List 3 critical improvements.
-    4. **Keyword Gap Analysis**: Identify 3-5 specific industry standard keywords/skills for the target role that are MISSING from the resume.
-    5. **Job Fit Prediction**: Predict if this candidate has "High", "Medium", or "Low" chances of getting an interview based purely on content relevance.
-  `;
-
-  const userContent = `
-    Analyze the following resume text specifically for the target job role: "${jobRole}".
-
-    Resume Text:
-    ${resumeText.substring(0, 5000)}
+    Act as a strict ATS algorithm.
+    Analyze the resume for the role: "${jobRole}".
+    Return JSON with score, strengths, improvements, missingKeywords, jobFitPrediction.
   `;
 
   const config = {
     responseMimeType: "application/json",
     responseSchema: analysisSchema,
     systemInstruction: systemInstruction,
-    temperature: 0.2,
+    temperature: 0.1,
   };
 
   try {
-    const response = await generateWithFallback("gemini-3-flash-preview", "gemini-flash-lite-latest", userContent, config);
-    const jsonText = extractJson(response.text || "{}");
-    return JSON.parse(jsonText) as ResumeAnalysis;
+    // Use flash-preview as it follows JSON schema better than lite
+    const response = await generateWithFallback("gemini-3-flash-preview", "gemini-3-flash-preview", resumeText, config);
+    return JSON.parse(extractJson(response.text || "{}")) as ResumeAnalysis;
   } catch (error) {
-    console.error("Analysis failed", error);
-    throw new Error("Failed to analyze resume.");
+    console.error("Analysis Error", error);
+    throw new Error("Resume analysis failed.");
   }
 };
