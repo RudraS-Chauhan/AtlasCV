@@ -49,6 +49,34 @@ const Tooltip = ({ text, children, position = 'top' }: { text: string; children?
   </div>
 );
 
+const SuccessModal = () => (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-300">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center transform scale-100 animate-in zoom-in-95 duration-300 relative overflow-hidden">
+            {/* Confetti Background Effect */}
+            <div className="absolute inset-0 pointer-events-none">
+                 <div className="absolute top-0 left-1/4 w-2 h-2 bg-yellow-400 rounded-full animate-ping"></div>
+                 <div className="absolute top-1/4 right-1/4 w-2 h-2 bg-blue-400 rounded-full animate-ping delay-100"></div>
+                 <div className="absolute bottom-1/4 left-1/3 w-2 h-2 bg-green-400 rounded-full animate-ping delay-200"></div>
+            </div>
+
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
+                <svg className="w-10 h-10 text-green-600 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <h2 className="text-2xl font-black text-slate-900 mb-2 relative z-10">You're In! 🚀</h2>
+            <p className="text-slate-600 mb-6 relative z-10">Elite features have been successfully unlocked. Enjoy your superpowers!</p>
+            <div className="w-full bg-slate-100 rounded-full h-1 overflow-hidden">
+                <div className="bg-gradient-to-r from-green-400 to-green-600 h-full rounded-full animate-progress-shrink w-full origin-left"></div>
+            </div>
+        </div>
+        <style>{`
+            @keyframes shrink { from { width: 100%; } to { width: 0%; } }
+            .animate-progress-shrink { animation: shrink 3.5s linear forwards; }
+        `}</style>
+    </div>
+);
+
 const ActionButtons: React.FC<{ 
     textToCopy: string; 
     onDownloadPDF?: () => void; 
@@ -139,6 +167,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>('Classic');
   const [resumeAnalysis, setResumeAnalysis] = useState<ResumeAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Initialize Pro State
   const [isProMember, setIsProMember] = useState<boolean>(() => {
@@ -172,7 +201,8 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
   const handlePaymentSuccess = () => {
     setIsProMember(true);
     localStorage.setItem('jobHero_isPro', 'true');
-    alert("Payment Successful! Elite Features Unlocked.");
+    setShowSuccessModal(true);
+    setTimeout(() => setShowSuccessModal(false), 3500);
   };
 
   const handleRazorpayPayment = () => {
@@ -186,8 +216,9 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
     if (!key) {
         const demo = confirm(
             "⚠️ RAZORPAY KEY MISSING ⚠️\n\n" +
-            "You haven't set up the 'VITE_RAZORPAY_KEY_ID' environment variable yet.\n\n" +
-            "Click OK to simulate a successful payment (DEMO MODE).\n" +
+            "To use real payments, create a .env file in your project root with:\n" +
+            "VITE_RAZORPAY_KEY_ID=your_test_key_id\n\n" +
+            "For now, click OK to simulate a successful payment (DEMO MODE).\n" +
             "Click Cancel to abort."
         );
         if (demo) {
@@ -208,9 +239,9 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
             handlePaymentSuccess();
         },
         prefill: {
-            name: "JobHero User", 
-            email: "user@example.com",
-            contact: "9999999999" 
+            name: userInput.fullName || "JobHero User", 
+            email: userInput.email || "user@example.com",
+            contact: userInput.phone || "9999999999" 
         },
         theme: {
             color: "#F59E0B"
@@ -521,6 +552,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
 
   return (
     <div className="max-w-5xl mx-auto">
+      {showSuccessModal && <SuccessModal />}
       <div className="flex flex-col sm:flex-row justify-between items-end gap-4 mb-0 px-4 sm:px-0">
         <div className="flex space-x-1 overflow-x-auto no-scrollbar w-full sm:w-auto">
           {tabs.map((tab) => (
