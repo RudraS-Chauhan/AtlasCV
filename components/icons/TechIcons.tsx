@@ -2,6 +2,8 @@ import React from 'react';
 
 // A lightweight component that returns an SVG based on a matching keyword
 export const TechIcon: React.FC<{ name: string; className?: string }> = ({ name, className = "w-4 h-4" }) => {
+  if (!name || typeof name !== 'string') return null;
+  
   const n = name.toLowerCase().trim();
 
   // Helper to check if name contains a keyword
