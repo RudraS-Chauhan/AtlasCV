@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { jsPDF } from "jspdf";
 import { JobToolkit, ResumeAnalysis, UserInput, ResumeVersion } from '../types';
@@ -24,7 +23,6 @@ declare global {
     }
 }
 
-// Added missing WarningIcon definition
 const WarningIcon = ({ className }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
         <path fillRule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z" clipRule="evenodd" />
@@ -45,8 +43,8 @@ const tabs: { id: Tab; name: string; icon: any }[] = [
   { id: 'resume', name: 'Resume', icon: ResumeIcon },
   { id: 'coverLetter', name: 'Cover Letter', icon: CoverLetterIcon },
   { id: 'linkedin', name: 'LinkedIn', icon: LinkedInIcon },
-  { id: 'interview', name: 'Mock Interview', icon: InterviewIcon },
-  { id: 'roadmap', name: 'Career Roadmap', icon: RoadmapIcon },
+  { id: 'interview', name: 'Interview Coach', icon: InterviewIcon },
+  { id: 'roadmap', name: 'Roadmap', icon: RoadmapIcon },
   { id: 'elite', name: 'Elite Tools', icon: () => <span className="text-lg">⚡</span> },
 ];
 
@@ -105,94 +103,97 @@ const TemplateCard: React.FC<{ type: TemplateType, isSelected: boolean, isLocked
     );
 };
 
-const AnalysisList = ({ title, items, type }: { title: string, items: string[], type: 'strength' | 'improvement' }) => (
-    <div className={`p-4 rounded-xl border h-full ${type === 'strength' ? 'bg-green-50 dark:bg-green-900/10 border-green-100 dark:border-green-900/30' : 'bg-amber-50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-900/30'}`}>
-        <h4 className={`font-bold text-sm mb-3 flex items-center gap-2 ${type === 'strength' ? 'text-green-800 dark:text-green-400' : 'text-amber-800 dark:text-amber-400'}`}>
-            {type === 'strength' ? <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0118 0z" /></svg> : <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>}
-            {title}
-        </h4>
-        <ul className="space-y-2">
-            {items?.length > 0 ? items.map((item, i) => (
-                <li key={i} className={`text-xs leading-relaxed flex items-start gap-2 ${type === 'strength' ? 'text-green-700 dark:text-green-300' : 'text-amber-700 dark:text-amber-300'}`}><span className="mt-0.5">•</span>{item}</li>
-            )) : <li className="text-xs text-slate-400 italic">No items detected.</li>}
-        </ul>
-    </div>
-);
-
-const FormatCoverLetter: React.FC<{ text: string }> = ({ text }) => {
-    const parts = text.split(/(\[.*?\])/g);
-    return (
-        <div className="whitespace-pre-wrap leading-relaxed text-slate-700 dark:text-slate-300 font-serif text-base">
-            {parts.map((part, i) => {
-                if (part.startsWith('[') && part.endsWith(']')) {
-                    return <span key={i} contentEditable suppressContentEditableWarning className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-2 py-0.5 rounded border-2 border-dashed border-yellow-400 dark:border-yellow-600 font-bold mx-1 shadow-sm transition-all hover:scale-105 cursor-text focus:ring-4 focus:ring-yellow-300 dark:focus:ring-yellow-700 focus:outline-none focus:bg-white dark:focus:bg-slate-800" title="Editable Placeholder - Type directly to replace">{part}</span>;
-                }
-                return <span key={i}>{part}</span>;
-            })}
-        </div>
-    );
-};
-
 const RoadmapStepItem: React.FC<{ step: any, index: number, isLast: boolean, onUnlock: () => void, isPro: boolean }> = ({ step, index, isLast, onUnlock, isPro }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     return (
         <div className="relative pl-12 sm:pl-16 py-4 group">
             {!isLast && <div className="absolute left-[1.15rem] sm:left-[2.15rem] top-8 bottom-[-2rem] w-0.5 bg-slate-200 dark:bg-slate-700 group-hover:bg-blue-300 dark:group-hover:bg-blue-800 transition-colors z-0"></div>}
             <div className={`absolute left-[0.4rem] sm:left-[1.4rem] top-5 w-6 h-6 sm:w-8 sm:h-8 rounded-full border-4 border-white dark:border-slate-950 flex items-center justify-center text-xs font-bold transition-all duration-300 z-10 shadow-sm ${isExpanded ? 'bg-blue-600 text-white scale-110 ring-4 ring-blue-100' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>{index + 1}</div>
-            <div className={`bg-white dark:bg-slate-800 rounded-xl border transition-all duration-300 overflow-hidden cursor-pointer relative ${isExpanded ? 'shadow-lg border-blue-300' : 'shadow-sm border-slate-200 hover:border-blue-300 hover:-translate-y-0.5'}`} onClick={() => setIsExpanded(!isExpanded)} role="button" tabIndex={0} aria-expanded={isExpanded}>
+            <div className={`bg-white dark:bg-slate-800 rounded-xl border transition-all duration-300 overflow-hidden cursor-pointer relative ${isExpanded ? 'shadow-lg border-blue-300' : 'shadow-sm border-slate-200 hover:border-blue-300 hover:bg-slate-50/50 dark:hover:bg-slate-700/50 hover:-translate-y-0.5'}`} onClick={() => setIsExpanded(!isExpanded)} role="button" tabIndex={0} aria-expanded={isExpanded}>
                 <div className="p-5 flex justify-between items-start gap-4">
                     <div className="flex-grow">
                         <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 mb-2">{step.phase} • {step.duration}</span>
                         <h3 className={`text-lg font-bold transition-colors ${isExpanded ? 'text-blue-700 dark:text-blue-400' : 'text-slate-900 dark:text-white'}`}>{step.title}</h3>
                         <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mt-1 line-clamp-2">{step.description}</p>
-                        {!isExpanded && <p className="text-xs font-semibold text-blue-500 mt-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 animate-in slide-in-from-left-2"><span>View Tasks & Resources</span><ArrowRightIcon className="w-3 h-3" /></p>}
+                        {!isExpanded && <p className="text-xs font-semibold text-blue-500 mt-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 animate-in slide-in-from-left-2"><span>View Details & Resources</span><ArrowRightIcon className="w-3 h-3" /></p>}
                     </div>
-                    <div className={`p-1.5 rounded-full mt-1 transition-all duration-300 ${isExpanded ? 'bg-blue-50 text-blue-600 rotate-180' : 'text-slate-400 group-hover:bg-slate-50 group-hover:text-blue-500'}`}><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg></div>
+                    <div className={`p-1.5 rounded-full mt-1 transition-all duration-300 ${isExpanded ? 'bg-blue-50 text-blue-600 rotate-180' : 'text-slate-400 group-hover:bg-slate-100 group-hover:text-blue-500'}`}><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg></div>
                 </div>
-                <div className={`grid transition-[grid-template-rows] duration-500 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}><div className="overflow-hidden"><div className="px-5 pb-5 pt-0 border-t border-slate-100 dark:border-slate-700/50 mt-2"><div className="mt-4 flex flex-wrap gap-2 mb-6">{step.tools?.map((tool: string, t: number) => (<span key={t} className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-md border border-slate-200 dark:border-slate-600 flex items-center gap-1.5"><TechIcon name={tool} className="w-3.5 h-3.5" />{tool}</span>))}</div><div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div className="bg-blue-50/50 dark:bg-blue-900/10 rounded-lg p-4 border border-blue-100 dark:border-blue-900/30"><h4 className="text-xs font-bold text-blue-800 dark:text-blue-300 uppercase tracking-wide mb-3 flex items-center gap-2"><CheckIcon className="w-4 h-4" /> Smart Action Plan</h4><ul className="space-y-2">{step.milestones?.map((m: string, i: number) => (<li key={i} className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300"><input type="checkbox" className="mt-1 rounded border-slate-300 text-blue-600 focus:ring-blue-500" /><span>{m}</span></li>)) || <li className="text-xs text-slate-400 italic">No milestones generated.</li>}</ul></div><div className="bg-amber-50/50 dark:bg-amber-900/10 rounded-lg p-4 border border-amber-100 dark:border-amber-900/30 relative overflow-hidden group/resources">{!isPro && (<div className="absolute inset-0 bg-white/60 dark:bg-slate-900/60 backdrop-blur-[2px] flex flex-col items-center justify-center text-center p-4 z-10"><span className="text-2xl mb-1">🔒</span><p className="text-xs font-bold text-slate-800 dark:text-white mb-2">Pro Resources Locked</p><button onClick={onUnlock} className="text-[10px] bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-full font-bold">Unlock</button></div>)}<h4 className="text-xs font-bold text-amber-800 dark:text-amber-300 uppercase tracking-wide mb-3 flex items-center gap-2"><span className="text-sm">📚</span> Elite Resources</h4><ul className="space-y-2">{step.resources?.map((r: any, i: number) => (<li key={i} className="flex items-center justify-between p-2 bg-white dark:bg-slate-800 rounded border border-amber-100 dark:border-amber-900/50 shadow-sm hover:shadow-md transition-all hover:border-amber-300 cursor-pointer"><div className="flex flex-col"><span className="text-xs font-semibold text-slate-800 dark:text-slate-200">{r.title}</span><span className="text-[10px] text-slate-500 uppercase">{r.type}</span></div><ArrowRightIcon className="w-3 h-3 text-slate-400" /></li>)) || <li className="text-xs text-slate-400 italic">No resources found.</li>}</ul></div></div></div></div></div>
+                <div className={`grid transition-[grid-template-rows,opacity] duration-500 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                    <div className="overflow-hidden">
+                        <div className="px-5 pb-5 pt-0 border-t border-slate-100 dark:border-slate-700/50 mt-2">
+                            <div className="mt-4 flex flex-wrap gap-2 mb-6">
+                                {step.tools?.map((tool: string, t: number) => (
+                                    <span key={t} className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-md border border-slate-200 dark:border-slate-600 flex items-center gap-1.5"><TechIcon name={tool} className="w-3.5 h-3.5" />{tool}</span>
+                                ))}
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="bg-blue-50/50 dark:bg-blue-900/10 rounded-lg p-4 border border-blue-100 dark:border-blue-900/30">
+                                    <h4 className="text-xs font-bold text-blue-800 dark:text-blue-300 uppercase tracking-wide mb-3 flex items-center gap-2"><CheckIcon className="w-4 h-4" /> Smart Action Plan</h4>
+                                    <ul className="space-y-2">
+                                        {step.milestones?.map((m: string, i: number) => (
+                                            <li key={i} className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300 transition-colors hover:text-blue-600"><input type="checkbox" className="mt-1 rounded border-slate-300 text-blue-600 focus:ring-blue-500" /><span>{m}</span></li>
+                                        )) || <li className="text-xs text-slate-400 italic">No milestones generated.</li>}
+                                    </ul>
+                                </div>
+                                <div className="bg-amber-50/50 dark:bg-amber-900/10 rounded-lg p-4 border border-amber-100 dark:border-amber-900/30 relative overflow-hidden group/resources">
+                                    {!isPro && (
+                                        <div className="absolute inset-0 bg-white/70 dark:bg-slate-900/70 backdrop-blur-[2px] flex flex-col items-center justify-center text-center p-4 z-10"><span className="text-2xl mb-1">🔒</span><p className="text-xs font-bold text-slate-800 dark:text-white mb-2">Pro Resources Locked</p><button onClick={(e) => { e.stopPropagation(); onUnlock(); }} className="text-[10px] bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-full font-bold shadow-sm">Unlock</button></div>
+                                    )}
+                                    <h4 className="text-xs font-bold text-amber-800 dark:text-amber-300 uppercase tracking-wide mb-3 flex items-center gap-2"><span className="text-sm">📚</span> Elite Resources</h4>
+                                    <ul className="space-y-2">
+                                        {step.resources?.map((r: any, i: number) => (
+                                            <li key={i} className="flex items-center justify-between p-2 bg-white dark:bg-slate-800 rounded border border-amber-100 dark:border-amber-900/50 shadow-sm hover:shadow-md transition-all hover:border-amber-300 cursor-pointer"><div className="flex flex-col"><span className="text-xs font-semibold text-slate-800 dark:text-slate-200">{r.title}</span><span className="text-[10px] text-slate-500 uppercase">{r.type}</span></div><ArrowRightIcon className="w-3 h-3 text-slate-400" /></li>
+                                        )) || <li className="text-xs text-slate-400 italic">No resources found.</li>}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );
 };
 
-const SuccessModal = ({ email, transactionId }: { email: string, transactionId: string }) => (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-300">
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center relative overflow-hidden">
-            <div className="absolute inset-0 pointer-events-none"><div className="absolute top-0 left-1/4 w-2 h-2 bg-yellow-400 rounded-full animate-ping"></div><div className="absolute top-1/4 right-1/4 w-2 h-2 bg-blue-400 rounded-full animate-ping delay-100"></div><div className="absolute bottom-1/4 left-1/3 w-2 h-2 bg-green-400 rounded-full animate-ping delay-200"></div></div>
-            <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6 relative z-10"><CheckIcon className="w-10 h-10 text-green-600 dark:text-green-400" /></div>
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2 relative z-10">You're In! 🚀</h2>
-            <p className="text-slate-600 dark:text-slate-300 mb-4 relative z-10">Elite Day Pass Activated (24 Hours).</p>
-            <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-3 text-left relative z-10"><div className="flex items-center gap-2 mb-2 border-b border-slate-200 dark:border-slate-800 pb-2"><span className="text-lg">🧾</span><span className="text-xs font-bold uppercase text-slate-500">Invoice Sent Automatically</span></div><div className="space-y-1 text-xs text-slate-600 dark:text-slate-400"><p>To: <span className="font-semibold text-slate-900 dark:text-white">{email}</span></p><p>Txn ID: <span className="font-mono text-blue-600 dark:text-blue-400">{transactionId}</span></p><p className="text-green-600 dark:text-green-500 font-medium">Status: Paid (₹25)</p></div></div>
+const SuccessModal = ({ email, transactionId }: { email: string; transactionId: string }) => (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center border border-slate-200 dark:border-slate-800">
+            <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl">🎉</div>
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Payment Successful!</h3>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">Your Elite access is now active for 24 hours. A receipt has been sent to <strong>{email}</strong>.</p>
+            <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg border border-slate-100 dark:border-slate-700 mb-6 font-mono text-[10px] text-slate-500 truncate">TXN: {transactionId}</div>
+            <button onClick={() => window.location.reload()} className="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors">Get Started</button>
         </div>
     </div>
 );
 
-const ActionButtons: React.FC<{ textToCopy: string; onDownloadPDF?: () => void; onShare?: () => void; templateSelector?: React.ReactNode }> = ({ textToCopy, onDownloadPDF, onShare, templateSelector }) => {
+const ActionButtons = ({ textToCopy, onDownloadPDF, onShare, templateSelector }: { textToCopy: string; onDownloadPDF: () => void; onShare: () => void; templateSelector?: React.ReactNode }) => {
     const [copied, setCopied] = useState(false);
-    const [shared, setShared] = useState(false);
-    const handleCopy = () => { navigator.clipboard.writeText(textToCopy).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }); };
-    const handleShare = () => { if (onShare) { onShare(); setShared(true); setTimeout(() => setShared(false), 2000); } };
+    const handleCopy = () => {
+        navigator.clipboard.writeText(textToCopy);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
     return (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 sm:mb-0 w-full">
-            <div className="flex-1">{templateSelector}</div>
-            <div className="flex gap-2 self-end sm:self-center">
-                {onShare && <Tooltip text={shared ? "Link Copied!" : "Get Shareable Link"} position="bottom"><button onClick={handleShare} className="bg-white dark:bg-slate-700 hover:bg-blue-50 dark:hover:bg-slate-600 text-blue-600 dark:text-blue-400 p-2 rounded-lg border border-blue-200 dark:border-blue-800 shadow-sm transition-colors">{shared ? <CheckIcon className="h-5 w-5" /> : <ShareIcon className="h-5 w-5" />}</button></Tooltip>}
-                {onDownloadPDF && <Tooltip text="Download as PDF" position="bottom"><button onClick={onDownloadPDF} className="bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 p-2 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm"><DownloadIcon className="h-5 w-5" /></button></Tooltip>}
-                <Tooltip text="Copy to Clipboard" position="bottom"><button onClick={handleCopy} className="bg-white dark:bg-slate-700 hover:bg-blue-50 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 p-2 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm">{copied ? <CheckIcon className="h-5 w-5 text-green-500" /> : <CopyIcon className="h-5 w-5" />}</button></Tooltip>
+        <div className="flex flex-col gap-6">
+            <div className="flex flex-wrap items-center gap-3">
+                <button onClick={handleCopy} className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                    {copied ? <CheckIcon className="h-4 w-4 text-green-500" /> : <CopyIcon className="h-4 w-4" />}
+                    {copied ? 'Copied!' : 'Copy Text'}
+                </button>
+                <button onClick={onDownloadPDF} className="flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-slate-700 text-white rounded-lg text-sm font-medium hover:bg-black dark:hover:bg-slate-600 transition-colors shadow-sm">
+                    <DownloadIcon className="h-4 w-4" /> Download PDF
+                </button>
+                <button onClick={onShare} className="flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800 rounded-lg text-sm font-medium hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">
+                    <ShareIcon className="h-4 w-4" /> Share Link
+                </button>
             </div>
+            {templateSelector && <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800">{templateSelector}</div>}
         </div>
     );
 };
-
-const ProUpsellCard: React.FC<{ description: string; onUnlock: () => void }> = ({ description, onUnlock }) => (
-    <div className="mt-10 bg-slate-900 dark:bg-slate-950 text-white rounded-xl p-6 relative overflow-hidden group cursor-pointer shadow-lg hover:shadow-2xl transition-all border border-slate-700" onClick={onUnlock}>
-        <div className="absolute top-0 -left-full w-1/2 h-full bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 group-hover:animate-[shine_1s_ease-in-out]"></div>
-        <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6">
-            <div className="flex-1"><h3 className="text-xl font-bold text-amber-400 flex items-center gap-2 mb-2 tracking-wide"><span className="bg-amber-400/20 text-amber-300 p-1 rounded-lg">👑</span>ELITE DAY PASS</h3><p className="text-slate-300 text-sm sm:text-base leading-relaxed">{description}</p></div>
-            <button className="whitespace-nowrap px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-bold text-sm rounded-lg shadow-[0_0_15px_rgba(245,158,11,0.5)] transform hover:-translate-y-0.5 transition-all">Unlock 24 Hours - ₹25</button>
-        </div>
-    </div>
-);
 
 const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onReset, onRegenerateRoadmap, onUpdateToolkit }) => {
   const [activeTab, setActiveTab] = useState<Tab>('resume');
@@ -223,7 +224,6 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
   const [interviewFeedback, setInterviewFeedback] = useState<Record<number, string>>({});
   const [evaluatingIndex, setEvaluatingIndex] = useState<number | null>(null);
 
-  // Added missing hasEliteContent definition
   const hasEliteContent = !!(
     toolkit.recruiterPsychology || 
     toolkit.salaryNegotiation || 
@@ -323,15 +323,15 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
         {activeTab === 'resume' && (
             <>
                 <div className="mb-8">
-                     <ActionButtons textToCopy={contentToCopy('resume')} onDownloadPDF={() => handleDownloadPDF('resume')} onShare={handleGenerateShareLink}
+                    <ActionButtons textToCopy={contentToCopy('resume')} onDownloadPDF={() => handleDownloadPDF('resume')} onShare={handleGenerateShareLink}
                         templateSelector={
                            <div className="flex flex-col gap-3">
                                <div className="flex flex-wrap items-center gap-2">
-                                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-2">Free:</span>
+                                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-2">Free Designs:</span>
                                    {freeTemplates.map(t => <TemplateCard key={t} type={t} isSelected={selectedTemplate === t} isLocked={false} onClick={() => setSelectedTemplate(t)} />)}
                                </div>
                                <div className="flex flex-wrap items-center gap-2">
-                                   <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mr-2">Elite:</span>
+                                   <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mr-2">Elite Designs:</span>
                                    {eliteTemplates.map(t => <TemplateCard key={t} type={t} isSelected={selectedTemplate === t} isLocked={!isProMember} onClick={() => !isProMember ? handleRazorpayPayment() : setSelectedTemplate(t)} />)}
                                </div>
                            </div>
@@ -352,75 +352,83 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
                                     <div className="p-5 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 flex items-center justify-between"><div className="flex flex-col items-center flex-1 border-r border-slate-100 dark:border-slate-700"><CircularProgress score={resumeAnalysis.score ?? 0} size={120} strokeWidth={10} /></div><div className="text-center flex-1"><div className={`text-2xl font-bold ${resumeAnalysis.jobFitPrediction === 'High' ? 'text-green-600' : 'text-slate-600 dark:text-slate-400'}`}>{resumeAnalysis.jobFitPrediction ?? "N/A"}</div><div className="text-xs font-bold text-slate-400 uppercase tracking-wide">Fit Prediction</div></div></div>
                                     <div className="p-5 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-100 dark:border-red-900/50"><h4 className="font-bold text-red-900 dark:text-red-300 text-sm mb-3 flex items-center gap-2"><span className="bg-red-200 dark:bg-red-800/50 text-red-700 dark:text-red-200 px-1.5 rounded text-[10px]">CRITICAL</span> Missing Keywords</h4><div className="flex flex-wrap gap-2">{resumeAnalysis.missingKeywords?.length > 0 ? resumeAnalysis.missingKeywords.map((k, i) => (<span key={i} className="px-2.5 py-1 bg-white dark:bg-slate-800 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-xs font-medium rounded-md shadow-sm">{k}</span>)) : <span className="text-xs text-slate-500 dark:text-slate-400">None detected. Great job!</span>}</div></div>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><AnalysisList title="Key Strengths" items={resumeAnalysis.strengths} type="strength" /><AnalysisList title="Suggested Improvements" items={resumeAnalysis.improvements} type="improvement" /></div>
                             </div>
                         ) : <div className="text-center py-8 text-slate-400 text-sm border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl">Click "Run Free ATS Scan" to see how well your resume matches the job description.</div>}
                 </div>
-                {!isProMember && <ProUpsellCard description="Unlock Elite Templates & Exclusive Career Strategies." onUnlock={handleRazorpayPayment} />}
             </>
         )}
 
         {activeTab === 'coverLetter' && (
             <>
-                <ActionButtons textToCopy={contentToCopy('coverLetter')} onDownloadPDF={() => handleDownloadPDF('coverLetter')} />
-                <div className="p-8 shadow-sm border border-slate-100 dark:border-slate-700 rounded-lg min-h-[600px] bg-white dark:bg-slate-900 mt-6 sm:mt-0"><FormatCoverLetter text={toolkit.coverLetter} /></div>
+                <ActionButtons textToCopy={contentToCopy('coverLetter')} onDownloadPDF={() => handleDownloadPDF('coverLetter')} onShare={handleGenerateShareLink} />
+                <div className="p-8 shadow-sm border border-slate-100 dark:border-slate-700 rounded-lg min-h-[600px] bg-white dark:bg-slate-900 mt-6 sm:mt-0 leading-relaxed font-serif">
+                    {toolkit.coverLetter}
+                </div>
             </>
         )}
 
         {activeTab === 'linkedin' && (
           <div className="space-y-6">
-            <ActionButtons textToCopy={contentToCopy('linkedin')} />
             <div className="bg-slate-50 dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700">
-                <h3 className="text-xs font-bold text-slate-400 uppercase mb-2">Optimized Headline</h3>
+                <h3 className="text-xs font-bold text-slate-400 uppercase mb-2">Headline Strategy</h3>
                 <p className="text-lg font-bold text-slate-900 dark:text-white mb-4">{currentHeadline}</p>
-                {toolkit.linkedin.alternativeHeadlines && toolkit.linkedin.alternativeHeadlines.length > 0 && (
-                    <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-800">
-                        <p className="text-xs font-semibold text-slate-500 mb-3">AI Suggestions (Click to copy):</p>
-                        <div className="space-y-2">
-                            {toolkit.linkedin.alternativeHeadlines.map((headline, idx) => (
-                                <button key={idx} onClick={() => handleCopyHeadline(headline, idx)} className="w-full text-left p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:border-blue-400 dark:hover:border-blue-500 cursor-pointer transition-colors flex justify-between items-center group focus:outline-none focus:ring-2 focus:ring-blue-500"><span className="flex-grow mr-2">{headline}</span><span className={`text-xs font-bold whitespace-nowrap transition-all ${copiedHeadlineIndex === idx ? 'text-green-600 opacity-100' : 'text-blue-600 opacity-0 group-hover:opacity-100'}`}>{copiedHeadlineIndex === idx ? 'COPIED ✓' : 'COPY'}</span></button>
-                            ))}
-                        </div>
+                {toolkit.linkedin.alternativeHeadlines && (
+                    <div className="space-y-2">
+                        {toolkit.linkedin.alternativeHeadlines.map((h, i) => (
+                            <button key={i} onClick={() => handleCopyHeadline(h, i)} className="w-full text-left p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:border-blue-400 transition-colors flex justify-between items-center group">
+                                <span>{h}</span>
+                                <span className="text-[10px] font-bold text-blue-600 opacity-0 group-hover:opacity-100 uppercase">{copiedHeadlineIndex === i ? 'Copied' : 'Copy'}</span>
+                            </button>
+                        ))}
                     </div>
                 )}
             </div>
             
             <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 relative group">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-4">
-                    <h3 className="text-xs font-bold text-slate-400 uppercase">About Section (Bio)</h3>
-                    <div className="flex gap-2">
-                        <button onClick={handleCopyBio} className="text-xs bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5">{copiedBio ? <CheckIcon className="w-3.5 h-3.5 text-green-500" /> : <CopyIcon className="w-3.5 h-3.5" />}{copiedBio ? 'Copied' : 'Copy'}</button>
-                    </div>
+                    <h3 className="text-xs font-bold text-slate-400 uppercase">Interactive Bio (About Section)</h3>
+                    <button onClick={handleCopyBio} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2 shadow-sm">
+                        {copiedBio ? <CheckIcon className="w-4 h-4" /> : <CopyIcon className="w-4 h-4" />}
+                        {copiedBio ? 'Bio Copied!' : 'Copy Full Bio'}
+                    </button>
                 </div>
-                <textarea className="w-full h-48 p-4 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-700 dark:text-slate-300 leading-relaxed resize-y focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50 dark:bg-slate-950 text-sm font-sans mb-4" value={currentBio} onChange={(e) => setCurrentBio(e.target.value)} />
+                <textarea className="w-full h-48 p-4 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-700 dark:text-slate-300 leading-relaxed resize-y focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50 dark:bg-slate-950 text-sm mb-4" value={currentBio} onChange={(e) => setCurrentBio(e.target.value)} />
                 <div className="flex flex-col sm:flex-row items-center gap-3 bg-slate-50 dark:bg-slate-950 p-3 rounded-lg border border-slate-100 dark:border-slate-800">
                     <span className="text-xs font-bold text-slate-500 uppercase whitespace-nowrap">Refine Tone:</span>
-                    <div className="flex gap-2 w-full sm:w-auto">
-                        {(['Professional', 'Storyteller', 'Executive'] as const).map(tone => (
-                            <button key={tone} onClick={() => setBioTone(tone)} className={`px-3 py-1.5 rounded text-xs font-medium transition-colors flex-1 sm:flex-none ${bioTone === tone ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 ring-1 ring-blue-200 dark:ring-blue-800' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'}`}>{tone}</button>
-                        ))}
-                    </div>
-                    <button onClick={handleRegenerateBio} disabled={isRegeneratingBio} className="w-full sm:w-auto ml-auto px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded transition-colors disabled:opacity-50">{isRegeneratingBio ? 'Updating...' : 'Regenerate Bio'}</button>
+                    <select value={bioTone} onChange={(e) => setBioTone(e.target.value as any)} className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-xs text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="Professional">Professional & Direct</option>
+                        <option value="Storyteller">Storyteller (Engaging)</option>
+                        <option value="Executive">Executive (Impactful)</option>
+                    </select>
+                    <button onClick={handleRegenerateBio} disabled={isRegeneratingBio} className="w-full sm:w-auto ml-auto px-4 py-1.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-bold rounded transition-colors disabled:opacity-50">
+                        {isRegeneratingBio ? 'Updating Bio...' : 'Apply Tone Changes'}
+                    </button>
                 </div>
             </div>
           </div>
         )}
 
-        {activeTab === 'interview' && (
-          <div className="space-y-6">
-            <ActionButtons textToCopy={contentToCopy('interview')} />
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800 text-blue-900 dark:text-blue-200 text-sm">{toolkit.mockInterview.intro}</div>
-            {toolkit.mockInterview.questions.map((item, index) => (
-                <div key={index} className="p-6 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800/50 hover:shadow-md transition-shadow"><div className="flex flex-col gap-4"><div className="flex gap-4"><div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center font-bold text-slate-500 shrink-0">{index + 1}</div><div className="w-full"><p className="font-bold text-slate-900 dark:text-white text-lg mb-2">{item.question}</p><p className="text-sm text-slate-600 dark:text-slate-400 italic bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border-l-2 border-green-500 mb-4">💡 General Tip: {item.feedback}</p><textarea placeholder="Type your answer here to get specific AI feedback..." className="w-full p-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-y min-h-[100px]" value={interviewAnswers[index] || ''} onChange={(e) => setInterviewAnswers({...interviewAnswers, [index]: e.target.value})} /><div className="flex justify-end mt-2"><button onClick={() => handleGetFeedback(index, item.question)} disabled={!interviewAnswers[index]?.trim() || evaluatingIndex === index} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg disabled:opacity-50 transition-colors">{evaluatingIndex === index ? <span className="flex items-center gap-2"><span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>Analyzing...</span> : 'Get AI Feedback'}</button></div>{interviewFeedback[index] && <div className="mt-4 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-100 dark:border-indigo-800/50 animate-in fade-in slide-in-from-top-2"><h4 className="text-xs font-bold text-indigo-800 dark:text-indigo-300 uppercase mb-2">AI Coach Feedback</h4><div className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">{interviewFeedback[index]}</div></div>}</div></div></div></div>
-            ))}
-            <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-400 text-sm text-center">{toolkit.mockInterview.outro}</div>
-          </div>
-        )}
-
         {activeTab === 'roadmap' && (
           <div className="space-y-8">
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800/50 flex flex-col sm:flex-row gap-4 items-end"><div className="flex-grow w-full"><label className="block text-xs font-bold text-blue-900 dark:text-blue-300 uppercase mb-1">Pivot to new role?</label><input type="text" placeholder="e.g. 'AI Engineer'" className="block w-full rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 text-sm" value={newRoleInput} onChange={(e) => setNewRoleInput(e.target.value)} /></div><div className="flex items-center gap-2 mb-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 rounded" onClick={handleToggleThinkingModel} role="switch" aria-checked={useThinkingModel} tabIndex={0} aria-label="Toggle Deep Thinking Model"><div className={`w-8 h-4 rounded-full p-0.5 transition-colors ${useThinkingModel ? 'bg-purple-600' : 'bg-slate-300'}`}><div className={`bg-white w-3 h-3 rounded-full shadow-md transform transition-transform ${useThinkingModel ? 'translate-x-4' : 'translate-x-0'}`}></div></div><span className="text-xs font-bold text-slate-500 dark:text-slate-400">Deep Think</span></div><button onClick={(e) => handleRoadmapUpdate(e)} disabled={isRegeneratingRoadmap} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-bold disabled:opacity-50 hover:bg-blue-700 transition-colors">{isRegeneratingRoadmap ? 'Thinking...' : 'Regenerate'}</button></div>
-            <div className="relative pt-4"><h3 className="font-bold text-lg text-slate-900 dark:text-white mb-6 flex items-center gap-2"><span className="text-2xl">🗺️</span> Career Mastery Flowchart</h3>{Array.isArray(toolkit.careerRoadmap) ? toolkit.careerRoadmap.map((step, i) => (<RoadmapStepItem key={i} step={step} index={i} isLast={i === toolkit.careerRoadmap.length - 1} onUnlock={handleRazorpayPayment} isPro={isProMember} />)) : <div className="p-8 border-2 border-dashed border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-900/10 rounded-xl text-center"><p className="text-red-600 dark:text-red-400 mb-4 font-medium">Roadmap format unavailable.</p><button onClick={() => handleRoadmapUpdate()} disabled={isRegeneratingRoadmap} className="px-6 py-2 bg-white dark:bg-slate-800 border border-red-200 text-red-600 font-bold rounded-lg hover:bg-red-50">↻ Generate Roadmap</button></div>}</div>
+            <div className="flex flex-col sm:flex-row gap-4 items-end bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-900/30">
+                <div className="flex-grow w-full">
+                   <label className="block text-xs font-bold text-blue-900 dark:text-blue-300 uppercase mb-1">Targeting a different role?</label>
+                   <input type="text" placeholder="e.g. 'Senior Architect'" className="block w-full rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 text-sm" value={newRoleInput} onChange={(e) => setNewRoleInput(e.target.value)} />
+                </div>
+                <button onClick={(e) => handleRoadmapUpdate(e)} disabled={isRegeneratingRoadmap} className="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold shadow-md hover:bg-blue-700 transition-colors">
+                    {isRegeneratingRoadmap ? 'Analyzing...' : 'Update Roadmap'}
+                </button>
+            </div>
+            <div className="relative pt-4">
+                <h3 className="font-bold text-xl text-slate-900 dark:text-white mb-8 flex items-center gap-3">
+                    <span className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">🗺️</span> Career Strategy Flowchart
+                </h3>
+                <div className="space-y-2">
+                    {Array.isArray(toolkit.careerRoadmap) ? toolkit.careerRoadmap.map((step, i) => (
+                        <RoadmapStepItem key={i} step={step} index={i} isLast={i === toolkit.careerRoadmap.length - 1} onUnlock={handleRazorpayPayment} isPro={isProMember} />
+                    )) : <div className="text-center py-10 text-slate-400">Roadmap generation failed. Please try regenerating.</div>}
+                </div>
+            </div>
           </div>
         )}
 
@@ -428,41 +436,45 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
             <div className="space-y-8">
                 {isProMember ? (
                     <div className="animate-in fade-in duration-500">
-                        <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/10 dark:to-orange-900/10 border border-amber-200 dark:border-amber-800 rounded-xl p-4 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 relative overflow-hidden"><div className="absolute top-0 right-0 -mt-2 -mr-2 w-16 h-16 bg-amber-400/10 rounded-full blur-xl"></div><div className="flex items-center gap-3 relative z-10"><div className="p-2 bg-amber-100 dark:bg-amber-900/40 rounded-full text-amber-600 dark:text-amber-400 ring-4 ring-white dark:ring-slate-800"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg></div><div><h3 className="font-bold text-slate-900 dark:text-white text-sm">Elite Pass Active</h3><p className="text-xs text-slate-500">Premium tools unlocked.</p></div></div><div className="flex flex-col items-end gap-2 relative z-10 min-w-[200px]"><div className={`flex items-center gap-3 bg-white dark:bg-slate-900 px-4 py-2 rounded-lg shadow-sm border ${progressRemaining < 10 ? 'border-red-400 animate-pulse' : 'border-slate-200'} w-full justify-between`}><span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Expires in</span><span className={`font-mono text-xl font-bold tabular-nums ${progressRemaining < 10 ? 'text-red-600' : 'text-amber-600'}`}>{timeRemaining}</span></div><div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden"><div className={`h-full rounded-full transition-all duration-1000 ease-linear ${progressRemaining < 10 ? 'bg-red-500' : 'bg-amber-500'}`} style={{ width: `${progressRemaining}%` }}></div></div></div></div>
+                        {/* Elite content header */}
                         {!hasEliteContent ? (
-                             <div className="text-center py-12"><h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Initialize Elite Strategy Engine</h3><p className="text-slate-500 dark:text-slate-400 mb-6 max-w-md mx-auto">Generate personalized cold emails, salary scripts, internship strategies, and recruiter profiles.</p><button onClick={handleGenerateEliteTools} disabled={isGeneratingElite} className="px-8 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-lg shadow-lg hover:shadow-xl transform transition hover:-translate-y-1 disabled:opacity-70">{isGeneratingElite ? <span className="flex items-center gap-2"><span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>Generating...</span> : "Generate Elite Tools"}</button></div>
+                             <div className="text-center py-20 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800">
+                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">Power Up Your Search ⚡</h3>
+                                <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-md mx-auto text-lg">You have Elite access. Generate your tailored internship strategy and networking kit.</p>
+                                <button onClick={handleGenerateEliteTools} disabled={isGeneratingElite} className="px-10 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-black rounded-xl shadow-xl hover:shadow-2xl transform transition hover:-translate-y-1">
+                                    {isGeneratingElite ? 'Generating Kit...' : 'Unlock Elite Tools Now'}
+                                </button>
+                             </div>
                         ) : (
-                            <>
-                                <div className="bg-slate-900 text-white rounded-xl shadow-lg border border-slate-700 overflow-hidden mb-8 relative animate-in fade-in slide-in-from-bottom-2"><div className="absolute top-0 right-0 p-4 opacity-10 text-9xl">🧠</div><div className="p-6 relative z-10"><h3 className="text-xl font-bold text-purple-400 mb-2 flex items-center gap-2"><span className="text-2xl">🧠</span> Recruiter Psychology</h3><p className="text-slate-300 text-sm italic mb-4 border-l-4 border-purple-500 pl-4 py-2 bg-slate-800/50 rounded-r">"Here is what I'm subconsciously thinking when I see your profile..."</p><p className="text-slate-200 leading-relaxed whitespace-pre-wrap">{toolkit.recruiterPsychology}</p></div></div>
-
-                                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 mb-8 animate-in fade-in slide-in-from-bottom-2 delay-200 relative overflow-hidden">
+                            <div className="space-y-10">
+                                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 relative overflow-hidden">
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
                                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 relative z-10">
-                                        <div><h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2"><SearchIcon className="w-6 h-6 text-blue-600" />Elite Internship Matcher</h3><p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Smart search strategies for <strong>{userInput.currentYear}</strong> students looking for {userInput.jobRoleTarget} roles.</p></div>
-                                        <button onClick={handleFindInternships} disabled={isFinding} className="px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-bold rounded-lg hover:bg-blue-200 transition-colors disabled:opacity-50">{isFinding ? 'Hunting...' : toolkit.internshipHunter ? 'Regenerate Matcher' : 'Launch Matcher'}</button>
-                                    </div>
-                                    {!toolkit.internshipHunter ? <div className="text-center py-8 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg"><p className="text-sm text-slate-500 mb-2">Unlock hidden opportunities tailored specifically to your background.</p><button onClick={handleFindInternships} className="text-blue-600 font-bold hover:underline text-sm">Launch Matcher</button></div> : (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                            <div><h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Target Platform Search Strings</h4><div className="space-y-3">{toolkit.internshipHunter?.searchQueries?.map((query, i) => (<a key={i} href={`https://www.google.com/search?q=${encodeURIComponent(query)}`} target="_blank" rel="noopener noreferrer" className="block group relative"><div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg text-xs font-mono text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-blue-400 transition-colors pr-8 truncate">{query}</div><div className="absolute right-2 top-1/2 -translate-y-1/2 text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-bold">GO ↗</div></a>)) || <p className="text-sm text-slate-500">No queries.</p>}</div></div>
-                                            <div><h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Strategic Game Plan</h4><div className="flex flex-wrap gap-2 mb-4">{toolkit.internshipHunter?.platforms?.map((platform, i) => (<span key={i} className="px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-[10px] font-bold uppercase rounded-full border border-blue-100">{platform}</span>))}</div><div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-100"><p className="text-xs font-bold text-amber-700 dark:text-amber-400 mb-1">🔥 THE ELITE HACK</p><p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{toolkit.internshipHunter?.strategy || "No strategy available."}</p></div></div>
+                                        <div>
+                                            <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2"><SearchIcon className="w-6 h-6 text-blue-600" />Elite Internship & Hackathon Matcher</h3>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Smart Search Strategy for <strong>{userInput.currentYear}</strong> students (1st-4th Year).</p>
                                         </div>
-                                    )}
+                                        <button onClick={handleFindInternships} disabled={isFinding} className="px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-bold rounded-lg hover:bg-blue-200 transition-colors">
+                                            {isFinding ? 'Finding...' : 'Run Matcher'}
+                                        </button>
+                                    </div>
+                                    {toolkit.internshipHunter ? (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            <div><h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Copy-Paste Search Strings</h4><div className="space-y-3">{toolkit.internshipHunter?.searchQueries?.map((q, i) => (<div key={i} className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg text-xs font-mono text-slate-600 dark:text-slate-300 border border-slate-200 truncate group relative hover:border-blue-400 cursor-pointer" onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(q)}`)}>{q}<div className="absolute right-2 top-1/2 -translate-y-1/2 text-blue-500 opacity-0 group-hover:opacity-100">GO ↗</div></div>))}</div></div>
+                                            <div><h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Strategy & Platforms</h4><div className="flex flex-wrap gap-2 mb-4">{toolkit.internshipHunter?.platforms?.map((p, i) => (<span key={i} className="px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 text-[10px] font-bold uppercase rounded-full border border-blue-100">{p}</span>))}</div><div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-100"><p className="text-xs font-bold text-amber-700 dark:text-amber-400 mb-1">🔥 THE ELITE HACK</p><p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{toolkit.internshipHunter?.strategy}</p></div></div>
+                                        </div>
+                                    ) : null}
                                 </div>
-
-                                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2"><span className="text-xl">⚡</span> Networking Power Pack</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 animate-in fade-in slide-in-from-bottom-2 delay-100">
-                                    {[{ title: "📧 Founder Cold Email", content: toolkit.coldEmail, color: "from-blue-600 to-indigo-600" }, { title: "🤝 HR / Recruiter Email", content: toolkit.hrEmail, color: "from-indigo-600 to-purple-600" }, { title: "💼 LinkedIn Pitch", content: toolkit.linkedinPitch, color: "from-sky-600 to-blue-600" }, { title: "🔄 Follow-Up Message", content: toolkit.followUpEmail, color: "from-slate-600 to-slate-800" }, { title: "👥 Referral Request", content: toolkit.referralEmail, color: "from-teal-600 to-emerald-600" }, { title: "💰 Salary Negotiation", content: toolkit.salaryNegotiation, color: "from-green-600 to-emerald-600" }].map((item, i) => (
-                                        <div key={i} className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col h-full"><div className={`bg-gradient-to-r ${item.color} p-3 text-white font-bold flex justify-between items-center`}><span className="text-sm truncate mr-2">{item.title}</span><button onClick={() => navigator.clipboard.writeText(item.content || "")} className="text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded transition-colors whitespace-nowrap">Copy</button></div><div className="p-4 whitespace-pre-wrap text-slate-700 dark:text-slate-300 text-xs leading-relaxed flex-grow">{item.content || "Generating..."}</div></div>
-                                    ))}
-                                </div>
-                                {toolkit.suggestedCourses && toolkit.suggestedCourses.length > 0 && (
-                                    <div className="bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-900/10 rounded-xl shadow-sm border border-cyan-100 p-6 mb-8 animate-in fade-in slide-in-from-bottom-2 delay-200"><h3 className="text-lg font-bold text-cyan-900 dark:text-cyan-300 mb-4 flex items-center gap-2"><span className="text-xl">🎓</span> Suggested Courses & Certifications</h3><div className="grid grid-cols-1 md:grid-cols-3 gap-4">{toolkit.suggestedCourses.map((course, idx) => (<div key={idx} className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col"><div className="text-xs font-bold text-cyan-600 mb-1 uppercase">{course.provider}</div><div className="font-bold text-slate-900 dark:text-white mb-2 leading-tight">{course.title}</div><p className="text-xs text-slate-500 mt-auto">{course.reason}</p></div>))}</div></div>
-                                )}
-                            </>
+                            </div>
                         )}
                     </div>
                 ) : (
-                   <div className="flex flex-col items-center justify-center py-16 text-center"><div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center text-4xl mb-6">🔒</div><h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Elite Tools Locked</h2><p className="text-slate-500 max-w-md mb-8">Get access to Recruiter Psychology, Internship Matching, Cold Emails, and more premium career assets.</p><button onClick={handleRazorpayPayment} className="px-8 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold rounded-lg shadow-lg hover:scale-105 transition-transform">Unlock 24 Hours - ₹25</button></div>
+                   <div className="flex flex-col items-center justify-center py-20 text-center">
+                       <div className="w-24 h-24 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center text-5xl mb-8">🔒</div>
+                       <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-3">Elite Tier Tools Locked</h2>
+                       <p className="text-slate-500 dark:text-slate-400 max-w-lg mb-10 text-lg">Join Elite to unlock <strong>Internship Matcher</strong>, <strong>Recruiter Profiles</strong>, <strong>Cold Email Scripts</strong>, and more.</p>
+                       <button onClick={handleRazorpayPayment} className="px-10 py-4 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-black rounded-xl shadow-lg hover:scale-105 transition-transform text-lg">Unlock All Tools (24h) - ₹25</button>
+                   </div>
                 )}
             </div>
         )}

@@ -92,7 +92,7 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
 
     let containerClass = "p-10 min-h-[800px] shadow-sm bg-white text-slate-800 text-sm leading-relaxed transition-all duration-300 relative";
     let nameClass = "text-3xl font-bold uppercase tracking-wide";
-    let contactClass = "text-sm text-slate-600 mt-1 flex flex-wrap gap-x-3 items-center whitespace-nowrap";
+    let contactClass = "text-sm text-slate-600 mt-1 flex flex-wrap gap-x-4 items-center";
     let sectionTitleClass = "text-base font-bold uppercase mt-6 mb-3 border-b border-slate-300 pb-1";
     let bodyClass = "whitespace-pre-line text-slate-700 leading-relaxed";
 
@@ -105,7 +105,7 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
     } else if (template === 'Modern') {
         containerClass += " font-sans max-w-[850px] mx-auto";
         nameClass = "text-5xl font-extrabold text-blue-800 mb-2 tracking-tight";
-        contactClass = "text-sm font-medium text-blue-600/80 mb-8 flex flex-wrap gap-x-4 items-center";
+        contactClass = "text-sm font-medium text-blue-600/80 mb-8 flex flex-wrap gap-x-6 items-center";
         sectionTitleClass = "text-blue-800 font-bold text-lg mt-8 mb-3 uppercase tracking-widest flex items-center gap-2 before:content-[''] before:w-1 before:h-5 before:bg-blue-600 before:mr-2";
     } else if (template === 'Minimalist') {
         containerClass += " font-sans max-w-[850px] mx-auto border border-slate-100";
@@ -201,10 +201,10 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
                 <div className={`mb-8 resume-header ${template === 'Classic' || template === 'Elegant' ? "text-center" : ""}`}>
                      <div className={nameClass}>{userInput.fullName || 'Your Name'}</div>
                      <div className={contactClass}>
-                        <span className="flex items-center gap-1">📧 {userInput.email}</span>
-                        <span className="flex items-center gap-1">📱 {userInput.phone}</span>
+                        <span className="flex items-center gap-1 whitespace-nowrap">📧 {userInput.email}</span>
+                        <span className="flex items-center gap-1 whitespace-nowrap">📱 {userInput.phone}</span>
                         {userInput.linkedinGithub && <span className="break-all">{userInput.linkedinGithub}</span>}
-                        {userInput.projectLink && <span className="font-semibold text-blue-600 dark:text-blue-400">{userInput.projectLink}</span>}
+                        {userInput.projectLink && <span className="font-semibold text-blue-600 dark:text-blue-400 whitespace-nowrap">{userInput.projectLink}</span>}
                      </div>
                 </div>
                 {rawContentFallback ? (
