@@ -16,7 +16,15 @@ if (typeof window !== 'undefined') {
   // @ts-ignore
   if (import.meta && import.meta.env) {
     // @ts-ignore
-    (window as any).process.env.API_KEY = import.meta.env.VITE_API_KEY;
+    const apiKey = import.meta.env.VITE_API_KEY;
+    if (apiKey) {
+        // @ts-ignore
+        (window as any).process.env.API_KEY = apiKey;
+        console.log("✅ VITE_API_KEY detected and mapped to process.env.API_KEY");
+    } else {
+        console.warn("⚠️ VITE_API_KEY is not defined in import.meta.env. Check your .env file or Vercel Settings.");
+    }
+    
     // @ts-ignore
     (window as any).process.env.VITE_RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID;
   }

@@ -160,16 +160,18 @@ const extractJson = (text: string): string => {
 
 // Helper function to safely retrieve API Key from either process.env or import.meta.env
 const getApiKey = (): string | undefined => {
-    // Priority 1: process.env (Standard/Polyfilled)
-    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-        return process.env.API_KEY;
-    }
-    // Priority 2: import.meta.env (Vite native)
+    // Priority 1: import.meta.env (Vite native - Recommended for Vercel/Vite)
     // @ts-ignore
     if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_KEY) {
         // @ts-ignore
         return import.meta.env.VITE_API_KEY;
     }
+    
+    // Priority 2: process.env (Standard/Polyfilled)
+    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+        return process.env.API_KEY;
+    }
+
     return undefined;
 };
 
@@ -183,6 +185,7 @@ const generateWithFallback = async (
     const apiKey = getApiKey();
 
     if (!apiKey) {
+        console.error("CRITICAL: API Key not found in VITE_API_KEY or process.env.API_KEY");
         throw new Error("API Key is missing (401). Please check your .env configuration.");
     }
 
@@ -201,6 +204,7 @@ const generateWithFallback = async (
         const isQuotaError = error.message?.includes('429') || error.message?.includes('Quota') || error.message?.includes('503');
 
         if (isQuotaError && fallbackModel) {
+            console.log(`Switching to fallback model: ${fallbackModel}`);
             await new Promise(resolve => setTimeout(resolve, 2000));
             const { thinkingConfig, ...fallbackConfig } = config;
             const response = await ai.models.generateContent({
