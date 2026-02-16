@@ -174,7 +174,7 @@ const TemplateCard: React.FC<{ type: TemplateType, isSelected: boolean, isLocked
     );
 };
 
-// ... (AnalysisList, FormatCoverLetter, RoadmapStepItem, SuccessModal, ActionButtons, ProUpsellCard remain the same)
+// ... (AnalysisList, FormatCoverLetter, SuccessModal, ActionButtons, ProUpsellCard remain the same)
 const AnalysisList = ({ title, items, type }: { title: string, items: string[], type: 'strength' | 'improvement' }) => (
     <div className={`p-4 rounded-xl border h-full ${type === 'strength' ? 'bg-green-50 dark:bg-green-900/10 border-green-100 dark:border-green-900/30' : 'bg-amber-50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-900/30'}`}>
         <h4 className={`font-bold text-sm mb-3 flex items-center gap-2 ${type === 'strength' ? 'text-green-800 dark:text-green-400' : 'text-amber-800 dark:text-amber-400'}`}>
@@ -242,7 +242,7 @@ const RoadmapStepItem: React.FC<{ step: any, index: number, isLast: boolean, onU
                 className={`absolute left-[0.4rem] sm:left-[1.4rem] top-5 w-6 h-6 sm:w-8 sm:h-8 rounded-full border-4 border-white dark:border-slate-950 flex items-center justify-center text-xs font-bold transition-all duration-300 z-10 shadow-sm ${
                     isExpanded 
                         ? 'bg-blue-600 text-white scale-110 ring-4 ring-blue-100 dark:ring-blue-900/30' 
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:border-blue-200'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:border-blue-200 group-hover:text-blue-500'
                 }`}
             >
                 {index + 1}
@@ -251,14 +251,15 @@ const RoadmapStepItem: React.FC<{ step: any, index: number, isLast: boolean, onU
             <div 
                 className={`bg-white dark:bg-slate-800 rounded-xl border transition-all duration-300 overflow-hidden cursor-pointer relative ${
                     isExpanded 
-                        ? 'shadow-lg border-blue-200 dark:border-blue-800 ring-1 ring-blue-100 dark:ring-blue-900/20' 
-                        : 'shadow-sm border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md'
+                        ? 'shadow-lg border-blue-300 dark:border-blue-700 ring-1 ring-blue-100 dark:ring-blue-900/20' 
+                        : 'shadow-sm border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md hover:-translate-y-0.5'
                 }`}
                 onClick={() => setIsExpanded(!isExpanded)}
                 onKeyDown={handleKeyDown}
                 role="button"
                 tabIndex={0}
                 aria-expanded={isExpanded}
+                title={isExpanded ? "Click to collapse" : "Click to view details"}
             >
                 <div className="p-5 flex justify-between items-start gap-4">
                     <div className="flex-grow">
@@ -271,8 +272,18 @@ const RoadmapStepItem: React.FC<{ step: any, index: number, isLast: boolean, onU
                         <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mt-1 line-clamp-2">
                             {step.description}
                         </p>
+                        
+                        {/* Interactive Hint */}
+                        {!isExpanded && (
+                            <p className="text-xs font-semibold text-blue-500 mt-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                                <span>View Tasks & Resources</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3">
+                                    <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                                </svg>
+                            </p>
+                        )}
                     </div>
-                    <div className={`p-1.5 rounded-full mt-1 transition-all duration-300 ${isExpanded ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 rotate-180' : 'text-slate-400 group-hover:bg-slate-50 dark:group-hover:bg-slate-700'}`}>
+                    <div className={`p-1.5 rounded-full mt-1 transition-all duration-300 ${isExpanded ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 rotate-180' : 'text-slate-400 group-hover:bg-slate-50 dark:group-hover:bg-slate-700 group-hover:text-blue-500'}`}>
                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
                             <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
                         </svg>
@@ -287,7 +298,7 @@ const RoadmapStepItem: React.FC<{ step: any, index: number, isLast: boolean, onU
                              {/* Tools Section */}
                              <div className="mt-4 flex flex-wrap gap-2 mb-6">
                                 {step.tools?.map((tool: string, t: number) => (
-                                    <span key={t} className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-md border border-slate-200 dark:border-slate-600 flex items-center gap-1.5">
+                                    <span key={t} className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-md border border-slate-200 dark:border-slate-600 flex items-center gap-1.5 hover:border-blue-300 dark:hover:border-blue-500 transition-colors cursor-default">
                                         <TechIcon name={tool} className="w-3.5 h-3.5" />
                                         {tool}
                                     </span>
@@ -296,14 +307,14 @@ const RoadmapStepItem: React.FC<{ step: any, index: number, isLast: boolean, onU
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* Milestones Checklist */}
-                                <div className="bg-blue-50/50 dark:bg-blue-900/10 rounded-lg p-4 border border-blue-100 dark:border-blue-900/30">
+                                <div className="bg-blue-50/50 dark:bg-blue-900/10 rounded-lg p-4 border border-blue-100 dark:border-blue-900/30 hover:border-blue-200 transition-colors">
                                     <h4 className="text-xs font-bold text-blue-800 dark:text-blue-300 uppercase tracking-wide mb-3 flex items-center gap-2">
                                         <CheckIcon className="w-4 h-4" /> Smart Action Plan
                                     </h4>
                                     <ul className="space-y-2">
                                         {step.milestones?.map((m: string, i: number) => (
                                             <li key={i} className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
-                                                <input type="checkbox" className="mt-1 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+                                                <input type="checkbox" className="mt-1 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
                                                 <span>{m}</span>
                                             </li>
                                         )) || <li className="text-xs text-slate-400 italic">No milestones generated.</li>}
@@ -311,12 +322,12 @@ const RoadmapStepItem: React.FC<{ step: any, index: number, isLast: boolean, onU
                                 </div>
 
                                 {/* Curated Resources (Elite Feature) */}
-                                <div className="bg-amber-50/50 dark:bg-amber-900/10 rounded-lg p-4 border border-amber-100 dark:border-amber-900/30 relative overflow-hidden">
+                                <div className="bg-amber-50/50 dark:bg-amber-900/10 rounded-lg p-4 border border-amber-100 dark:border-amber-900/30 relative overflow-hidden group/resources">
                                     {!isPro && (
-                                        <div className="absolute inset-0 bg-white/60 dark:bg-slate-900/60 backdrop-blur-[2px] flex flex-col items-center justify-center text-center p-4 z-10">
+                                        <div className="absolute inset-0 bg-white/60 dark:bg-slate-900/60 backdrop-blur-[2px] flex flex-col items-center justify-center text-center p-4 z-10 transition-opacity">
                                             <span className="text-2xl mb-1">🔒</span>
                                             <p className="text-xs font-bold text-slate-800 dark:text-white mb-2">Pro Resources Locked</p>
-                                            <button onClick={onUnlock} className="text-[10px] bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-full font-bold transition-colors">
+                                            <button onClick={onUnlock} className="text-[10px] bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-full font-bold transition-colors shadow-sm">
                                                 Unlock
                                             </button>
                                         </div>
@@ -326,7 +337,7 @@ const RoadmapStepItem: React.FC<{ step: any, index: number, isLast: boolean, onU
                                     </h4>
                                     <ul className="space-y-2">
                                         {step.resources?.map((r: any, i: number) => (
-                                            <li key={i} className="flex items-center justify-between p-2 bg-white dark:bg-slate-800 rounded border border-amber-100 dark:border-amber-900/50 shadow-sm">
+                                            <li key={i} className="flex items-center justify-between p-2 bg-white dark:bg-slate-800 rounded border border-amber-100 dark:border-amber-900/50 shadow-sm hover:shadow-md transition-all hover:border-amber-300 cursor-pointer">
                                                 <div className="flex flex-col">
                                                     <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">{r.title}</span>
                                                     <span className="text-[10px] text-slate-500 uppercase">{r.type}</span>
