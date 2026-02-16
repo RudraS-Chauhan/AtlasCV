@@ -20,7 +20,7 @@ const MoonIcon = ({ className }: { className?: string }) => (
 );
 
 const ContactForm = () => {
-    const [form, setForm] = useState({ name: '', email: '', message: '' });
+    const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' });
     const [status, setStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -30,56 +30,84 @@ const ContactForm = () => {
         // Simulate network delay before opening mail client
         setTimeout(() => {
             const subject = encodeURIComponent(`Support Request: ${form.name}`);
-            const body = encodeURIComponent(`Name: ${form.name}\nEmail: ${form.email}\n\nMessage:\n${form.message}`);
+            const body = encodeURIComponent(`Name: ${form.name}\nEmail: ${form.email}\nPhone: ${form.phone}\n\nMessage:\n${form.message}`);
             window.location.href = `mailto:rudrasinghchauhan2007@gmail.com?subject=${subject}&body=${body}`;
             setStatus('success');
-            setForm({ name: '', email: '', message: '' });
+            setForm({ name: '', email: '', phone: '', message: '' });
             setTimeout(() => setStatus('idle'), 5000);
         }, 1000);
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-3 mt-4">
-            {status === 'success' ? (
-                <div className="p-4 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg text-sm font-bold text-center animate-in fade-in">
-                    ✅ Message prepared! Opening your email client...
+        <div className="space-y-6 mt-4">
+            <form onSubmit={handleSubmit} className="space-y-3">
+                {status === 'success' ? (
+                    <div className="p-4 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg text-sm font-bold text-center animate-in fade-in">
+                        ✅ Message prepared! Opening your email client...
+                    </div>
+                ) : (
+                    <>
+                        <input 
+                            type="text" 
+                            placeholder="Your Name" 
+                            className="w-full p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                            value={form.name}
+                            onChange={e => setForm({...form, name: e.target.value})}
+                            required
+                        />
+                        <div className="grid grid-cols-2 gap-3">
+                            <input 
+                                type="email" 
+                                placeholder="Your Email" 
+                                className="w-full p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                value={form.email}
+                                onChange={e => setForm({...form, email: e.target.value})}
+                                required
+                            />
+                            <input 
+                                type="tel" 
+                                placeholder="Phone Number" 
+                                className="w-full p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                value={form.phone}
+                                onChange={e => setForm({...form, phone: e.target.value})}
+                            />
+                        </div>
+                        <textarea 
+                            placeholder="How can we help?" 
+                            rows={3}
+                            className="w-full p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none resize-none transition-all"
+                            value={form.message}
+                            onChange={e => setForm({...form, message: e.target.value})}
+                            required
+                        />
+                        <button 
+                            type="submit" 
+                            disabled={status === 'submitting'}
+                            className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50 shadow-sm"
+                        >
+                            {status === 'submitting' ? 'Sending...' : 'Send Message'}
+                        </button>
+                    </>
+                )}
+            </form>
+            
+            {/* Direct Contact Info Section */}
+            <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Direct Support</p>
+                <div className="flex flex-col gap-2 text-sm text-slate-600 dark:text-slate-400">
+                    <div className="flex items-center gap-2">
+                        <span className="text-lg">📧</span>
+                        <a href="mailto:rudrasinghchauhan2007@gmail.com" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                            rudrasinghchauhan2007@gmail.com
+                        </a>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-lg">📞</span>
+                        <span>+91 98765 43210</span>
+                    </div>
                 </div>
-            ) : (
-                <>
-                    <input 
-                        type="text" 
-                        placeholder="Your Name" 
-                        className="w-full p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                        value={form.name}
-                        onChange={e => setForm({...form, name: e.target.value})}
-                        required
-                    />
-                    <input 
-                        type="email" 
-                        placeholder="Your Email" 
-                        className="w-full p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                        value={form.email}
-                        onChange={e => setForm({...form, email: e.target.value})}
-                        required
-                    />
-                    <textarea 
-                        placeholder="How can we help?" 
-                        rows={3}
-                        className="w-full p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none resize-none transition-all"
-                        value={form.message}
-                        onChange={e => setForm({...form, message: e.target.value})}
-                        required
-                    />
-                    <button 
-                        type="submit" 
-                        disabled={status === 'submitting'}
-                        className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50 shadow-sm"
-                    >
-                        {status === 'submitting' ? 'Sending...' : 'Send Message'}
-                    </button>
-                </>
-            )}
-        </form>
+            </div>
+        </div>
     );
 };
 
@@ -131,22 +159,26 @@ const HeroSection = () => (
 );
 
 const HowItWorks = () => (
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto mb-16 px-4">
-      {[
-          { step: "01", title: "Share Your Story", desc: "Enter your raw details, rough notes, or copy-paste your old resume.", icon: "✍️" },
-          { step: "02", title: "AI Architect", desc: "Our Gemini 3.0 engine structures, polishes, and keywords your profile.", icon: "🧠" },
-          { step: "03", title: "Launch Career", desc: "Download ATS-ready PDFs, prep for interviews, and get the job.", icon: "🚀" }
-      ].map((item, i) => (
-          <div key={i} className="relative group bg-white/60 dark:bg-slate-800/60 backdrop-blur-md p-6 rounded-2xl border border-white/60 dark:border-slate-700/60 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-              <div className="absolute -top-4 -left-4 w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-xl flex items-center justify-center font-bold shadow-lg transform rotate-3 group-hover:rotate-0 transition-transform">
-                  {item.step}
-              </div>
-              <div className="text-4xl mb-4 transform transition-transform group-hover:scale-110 duration-300">{item.icon}</div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{item.title}</h3>
-              <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">{item.desc}</p>
-          </div>
-      ))}
-  </div>
+    <div className="text-center mb-16 px-4">
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-8">How It Works</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative max-w-4xl mx-auto">
+             <div className="hidden md:block absolute top-12 left-16 right-16 h-0.5 bg-gradient-to-r from-blue-200 via-purple-200 to-blue-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 -z-10"></div>
+             
+             {[
+                { title: "Input Details", desc: "Share your skills, experience, and target role.", icon: "📝" },
+                { title: "AI Analysis", desc: "Gemini 3.0 analyzes your profile & generates content.", icon: "✨" },
+                { title: "Get Hired", desc: "Download toolkit, prep, and ace interviews.", icon: "🚀" }
+             ].map((step, i) => (
+                 <div key={i} className="relative flex flex-col items-center group">
+                     <div className="w-24 h-24 bg-white dark:bg-slate-800 rounded-full border-4 border-blue-50 dark:border-slate-700 flex items-center justify-center text-4xl shadow-sm mb-4 group-hover:scale-110 transition-transform duration-300 z-10">
+                         {step.icon}
+                     </div>
+                     <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2">{step.title}</h3>
+                     <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs">{step.desc}</p>
+                 </div>
+             ))}
+        </div>
+    </div>
 );
 
 // Expanded Error Handling Helpers

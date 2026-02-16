@@ -81,26 +81,68 @@ const TextareaField: React.FC<{
     </div>
 );
 
-const MOCK_DATA: UserInput = {
-    fullName: "Alex Johnson",
-    email: "alex.tech@example.com",
-    phone: "+1 555 019 2834",
-    linkedinGithub: "linkedin.com/in/alexj | github.com/alexj",
-    careerObjective: "Aspiring Full Stack Developer passionate about building scalable, user-centric web applications and solving complex problems with code.",
-    education: "B.Tech Computer Science, Tech University (2025)",
-    currentYear: "Final Year",
-    skills: "React, TypeScript, Node.js, Tailwind CSS, PostgreSQL, Python, Git, AWS (Basic)",
-    projects: "1. TaskMaster AI: A productivity app using React & OpenAI API.\n2. ShopEasy: Full-stack E-commerce platform with Stripe integration.",
-    projectLink: "github.com/alexj/taskmaster",
-    internships: "Frontend Intern at StartupFlow (Summer 2024): Improved site performance by 40% and implemented new dashboard features.",
-    yearsOfExperience: "0-1 Years",
-    certifications: "Meta Frontend Developer Professional Certificate",
-    jobRoleTarget: "Frontend Engineer",
-    company: "Innovative Tech Startups or Product Companies",
-    whyThisRole: "I love combining creativity with logic to build seamless user experiences.",
-    interests: "Open Source Contributing, UI/UX Design, Hiking",
-    customCSS: "/* Add custom CSS to style your resume */\n.resume-header { border-bottom: 2px solid #2563eb; }"
-};
+const MOCK_PROFILES: UserInput[] = [
+    {
+        fullName: "Alex Johnson",
+        email: "alex.tech@example.com",
+        phone: "555 019 2834",
+        linkedinGithub: "linkedin.com/in/alexj | github.com/alexj",
+        careerObjective: "Aspiring Full Stack Developer passionate about building scalable, user-centric web applications and solving complex problems with code.",
+        education: "B.Tech Computer Science, Tech University (2025)",
+        currentYear: "Final Year",
+        skills: "React, TypeScript, Node.js, Tailwind CSS, PostgreSQL, Python, Git, AWS (Basic)",
+        projects: "1. TaskMaster AI: A productivity app using React & OpenAI API.\n2. ShopEasy: Full-stack E-commerce platform with Stripe integration.",
+        projectLink: "github.com/alexj/taskmaster",
+        internships: "Frontend Intern at StartupFlow (Summer 2024): Improved site performance by 40% and implemented new dashboard features.",
+        yearsOfExperience: "0-1 Years",
+        certifications: "Meta Frontend Developer Professional Certificate",
+        jobRoleTarget: "Frontend Engineer",
+        company: "Innovative Tech Startups or Product Companies",
+        whyThisRole: "I love combining creativity with logic to build seamless user experiences.",
+        interests: "Open Source Contributing, UI/UX Design, Hiking",
+        customCSS: ""
+    },
+    {
+        fullName: "Priya Patel",
+        email: "priya.data@example.com",
+        phone: "987 654 3210",
+        linkedinGithub: "linkedin.com/in/priyadata | github.com/priyads",
+        careerObjective: "Data Science enthusiast with a strong foundation in machine learning and statistical analysis, eager to uncover insights from big data.",
+        education: "M.Sc. Data Science, City University (2024)",
+        currentYear: "Graduated",
+        skills: "Python, SQL, Pandas, Scikit-learn, TensorFlow, Tableau, Statistics, Jupyter",
+        projects: "1. House Price Predictor: Regression model with 92% accuracy.\n2. Customer Churn Analysis: Analyzed telecom data to predict churn.",
+        projectLink: "github.com/priyads/churn-analysis",
+        internships: "Data Analyst Intern at FinCorp (6 Months): Automated reporting pipelines reducing manual work by 15 hours/week.",
+        yearsOfExperience: "0-1 Years",
+        certifications: "Google Data Analytics Professional Certificate",
+        jobRoleTarget: "Data Scientist",
+        company: "Data-driven Fintech or HealthTech",
+        whyThisRole: "I want to apply my statistical knowledge to solve real-world business problems.",
+        interests: "Chess, Reading Sci-Fi, Kaggle Competitions",
+        customCSS: ""
+    },
+    {
+        fullName: "Rahul Sharma",
+        email: "rahul.design@example.com",
+        phone: "998 877 6655",
+        linkedinGithub: "linkedin.com/in/rahuldesign | behance.net/rahulcreates",
+        careerObjective: "Creative UI/UX Designer focused on crafting intuitive digital experiences that delight users and achieve business goals.",
+        education: "B.Des in Interaction Design, National Institute of Design (2025)",
+        currentYear: "Final Year",
+        skills: "Figma, Adobe XD, Prototyping, User Research, Wireframing, HTML/CSS Basics",
+        projects: "1. EcoEat App: Designed a sustainable food delivery app interface.\n2. Portfolio Redesign: Revamped a local NGO's website for better accessibility.",
+        projectLink: "behance.net/rahulcreates/ecoeat",
+        internships: "UX Design Intern at CreativeStudio (Summer 2023): Conducted user testing and redesigned the mobile onboarding flow.",
+        yearsOfExperience: "0-1 Years",
+        certifications: "Google UX Design Certificate",
+        jobRoleTarget: "Product Designer",
+        company: "Top Consumer Apps or Design Agencies",
+        whyThisRole: "I am passionate about empathy-driven design and solving user frustrations.",
+        interests: "Sketching, Photography, Traveling",
+        customCSS: ""
+    }
+];
 
 const STEPS = [
     { id: 1, title: 'Identity', icon: '👤', description: "Let's start with the basics." },
@@ -225,9 +267,14 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading }) => {
   };
 
   const handleMagicFill = () => {
-      setFormData(MOCK_DATA);
-      setPhoneNum("555 019 2834");
-      setCountryCode("+1");
+      // Randomly select a profile
+      const randomProfile = MOCK_PROFILES[Math.floor(Math.random() * MOCK_PROFILES.length)];
+      setFormData(randomProfile);
+      
+      // Attempt to set phone state from random profile (basic logic, assumes +1 or no code in mock data for now)
+      // For simplicity in this demo, let's just set raw number and default code +91
+      setPhoneNum(randomProfile.phone); 
+      setCountryCode("+91"); 
   };
 
   const handleImport = async () => {
@@ -464,26 +511,6 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading }) => {
                         <TextareaField id="whyThisRole" label="Why them?" placeholder="I admire the innovative culture..." value={formData.whyThisRole} onChange={handleChange} rows={2} required />
                   </div>
                   <InputField id="interests" label="Personal Interests" placeholder="e.g., AI, Gaming, Cricket" value={formData.interests} onChange={handleChange} required />
-                  
-                  <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
-                      <details className="group">
-                          <summary className="flex items-center gap-2 font-semibold text-slate-500 hover:text-blue-600 cursor-pointer list-none text-sm transition-colors">
-                              <span className="transform transition-transform group-open:rotate-90">▶</span>
-                              🎨 Advanced: Custom Resume CSS
-                          </summary>
-                          <div className="mt-3">
-                              <TextareaField 
-                                id="customCSS" 
-                                label="Custom CSS" 
-                                placeholder=".resume-header { background: #000; } ... overrides" 
-                                value={formData.customCSS || ''} 
-                                onChange={handleChange} 
-                                rows={4} 
-                                helpText="Apply custom styling to the Resume Preview. Use element IDs or structure from the template." 
-                              />
-                          </div>
-                      </details>
-                  </div>
               </div>
           )}
 

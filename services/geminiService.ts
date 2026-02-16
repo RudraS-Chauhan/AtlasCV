@@ -35,7 +35,10 @@ const roadmapSchema = {
 const coreResponseSchema = {
   type: Type.OBJECT,
   properties: {
-    resume: { type: Type.STRING, description: "A clean, ATS-friendly, one-page resume text. Use Standard Markdown Headers like '### EXPERIENCE' or just 'EXPERIENCE'. Do not use fancy formatting." },
+    resume: { 
+        type: Type.STRING, 
+        description: "A clean, ATS-friendly, one-page resume text. CRITICAL: You MUST use standard Markdown Headers (e.g., '### EXPERIENCE') on their own new lines. Do NOT use inline headers or bullet points as separators. Ensure every section (Summary, Education, Skills, Experience, Projects) starts on a NEW LINE." 
+    },
     coverLetter: { 
         type: Type.STRING, 
         description: "A formal 3-paragraph business cover letter with header. IMPORTANT: You MUST include '[Hiring Manager Name]' and '[Company Address]' in the header section as placeholders." 
@@ -154,20 +157,6 @@ const extractJson = (text: string): string => {
   return text.substring(startIndex, endIndex + 1);
 };
 
-const getApiKey = (): string | undefined => {
-  try {
-    // @ts-ignore
-    if (import.meta && import.meta.env && import.meta.env.VITE_API_KEY) return import.meta.env.VITE_API_KEY;
-  } catch (e) {}
-  try {
-    if (typeof process !== 'undefined' && process.env) {
-      if (process.env.VITE_API_KEY) return process.env.VITE_API_KEY;
-      if (process.env.API_KEY) return process.env.API_KEY;
-    }
-  } catch (e) {}
-  return undefined;
-};
-
 // Helper function to retry with a fallback model if the primary fails
 const generateWithFallback = async (
     primaryModel: string, 
@@ -175,10 +164,8 @@ const generateWithFallback = async (
     contents: string, 
     config: any
 ) => {
-    const apiKey = getApiKey();
-    if (!apiKey) throw new Error("Missing API Key. Please verify your environment configuration.");
-    
-    const ai = new GoogleGenAI({ apiKey: apiKey });
+    // According to guidelines, API key must be process.env.API_KEY directly.
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
     try {
         const response = await ai.models.generateContent({
@@ -227,7 +214,7 @@ export const generateJobToolkit = async (data: UserInput): Promise<JobToolkit> =
     **DATA INTEGRITY**: Use ONLY provided details. No hallucinations.
     
     **CRITICAL GUIDELINES**:
-    1. **Resume**: STRICTLY use these section headers: SUMMARY, EDUCATION, SKILLS, EXPERIENCE, PROJECTS, CERTIFICATIONS. Use "➤" for bullet points. Do NOT use fancy formatting or columns. Just clean text.
+    1. **Resume**: STRICTLY use standard Markdown Headers (e.g., '### EXPERIENCE') for sections. **EACH SECTION MUST START ON A NEW LINE.** Do NOT use bullet points (•) to separate sections like "SUMMARY • Aspiring...". It must be "### SUMMARY\nAspiring...".
     2. **Roadmap**: Do NOT give generic advice like "Learn React". Give actionable, specific milestones like "Build a custom Hook for API fetching" or "Read 'Clean Code' by Uncle Bob".
     3. **Mock Interview**: Generate 10 diverse questions ranging from behavioral to advanced technical/system design concepts appropriate for the role.
     4. **Tone**: Authoritative, encouraging, and specific. Avoid robotic phrasing.
@@ -262,7 +249,8 @@ export const generateTargetedResume = async (data: UserInput, targetRole: string
   const systemInstruction = `
     You are an expert resume writer. Rewrite the resume specifically for the role: "${targetRole}".
     Focus on transferable skills and relevant projects from the user's background.
-    **CRITICAL**: Output ONLY the resume text. Use standard headers: SUMMARY, EDUCATION, SKILLS, EXPERIENCE, PROJECTS, CERTIFICATIONS. Use "➤" for bullet points.
+    **CRITICAL**: Output ONLY the resume text. Use standard headers on new lines: SUMMARY, EDUCATION, SKILLS, EXPERIENCE, PROJECTS, CERTIFICATIONS. Use "➤" for bullet points.
+    Do NOT use inline headers. Each section must be on a new line.
     Do not include markdown code blocks or JSON. Just the clean text.
   `;
 
