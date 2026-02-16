@@ -165,7 +165,12 @@ const generateWithFallback = async (
     contents: string, 
     config: any
 ) => {
-    // According to guidelines, API key must be process.env.API_KEY directly.
+    // CRITICAL: Explicit check for API Key to prevent "An API Key must be set" error crash
+    // This allows the App.tsx error boundary to catch and display the "Configuration Error" UI
+    if (!process.env.API_KEY) {
+        throw new Error("API Key is missing (401). Please check your .env configuration.");
+    }
+
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
     try {

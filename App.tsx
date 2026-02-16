@@ -100,20 +100,19 @@ const AboutModal = ({ onClose }: { onClose: () => void }) => {
                 return (
                     <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                         <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700 mb-4">
-                            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Direct Support Channel</p>
+                            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Developer & Support</p>
                             <div className="space-y-3">
                                 <a href="mailto:rudrasinghchauhan2007@gmail.com" className="flex items-center gap-3 p-2 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors group">
                                     <span className="text-lg group-hover:scale-110 transition-transform">📧</span>
-                                    <span className="text-sm text-slate-700 dark:text-slate-300 font-medium group-hover:text-blue-600 dark:group-hover:text-blue-400">rudrasinghchauhan2007@gmail.com</span>
+                                    <div className="flex flex-col">
+                                        <span className="text-sm text-slate-900 dark:text-white font-bold">Rudra Singh Chauhan</span>
+                                        <span className="text-xs text-slate-500 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400">rudrasinghchauhan2007@gmail.com</span>
+                                    </div>
                                 </a>
-                                <div className="flex items-center gap-3 p-2">
-                                    <span className="text-lg">📞</span>
-                                    <span className="text-sm text-slate-700 dark:text-slate-300 font-medium">+91 98765 43210</span>
-                                </div>
                             </div>
                         </div>
                         <button onClick={() => window.open('mailto:rudrasinghchauhan2007@gmail.com')} className="w-full py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-bold rounded-lg hover:opacity-90 transition-opacity">
-                            Send Email
+                            Contact Developer
                         </button>
                     </div>
                 );
@@ -168,7 +167,9 @@ const AboutModal = ({ onClose }: { onClose: () => void }) => {
 
                 {/* Footer */}
                 <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 text-center">
-                    <p className="text-[10px] text-slate-400">© 2024 JobHero AI. All rights reserved.</p>
+                    <p className="text-[10px] text-slate-400">
+                        JobHero AI © {new Date().getFullYear()}. Created by Rudra Singh Chauhan. All Rights Reserved.
+                    </p>
                 </div>
             </div>
         </div>
@@ -590,7 +591,7 @@ const App: React.FC = () => {
                 JobHero.ai © {new Date().getFullYear()} • Powered by <span className="text-blue-600 font-bold">Google Gemini 3.0</span>
             </p>
             <p className="text-xs text-slate-400">
-                Not affiliated with Google. Resume advice is AI-generated and should be verified.
+                Created by Rudra Singh Chauhan. Not affiliated with Google.
             </p>
         </div>
       </footer>
