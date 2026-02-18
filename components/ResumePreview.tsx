@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { UserInput, ResumeVersion } from '../types';
 import { TechIcon } from './icons/TechIcons';
 
-export type TemplateType = 'Classic' | 'Modern' | 'Minimalist' | 'Creative' | 'Elegant' | 'Executive';
+export type TemplateType = 'Classic' | 'Modern' | 'Minimalist' | 'Creative' | 'Elegant' | 'Executive' | 'Professional';
 
 const parseResume = (text: string) => {
     const sections: Record<string, string> = {};
@@ -63,73 +63,67 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
     template, 
     isBlurred, 
     onUnlock, 
-    userInput,
-    versions,
-    activeVersionId,
-    onVersionChange,
-    onCreateVersion,
-    isGeneratingVersion
+    userInput
 }) => {
     const sections = useMemo(() => parseResume(text), [text]);
     const clean = (txt: string) => {
         if (!txt) return "";
         return txt.replace(/➤/g, '•').replace(/\*\*/g, '').trim();
     };
-    
-    const [showVersionInput, setShowVersionInput] = useState(false);
-    const [newVersionRole, setNewVersionRole] = useState('');
-
-    const handleCreateVersion = () => {
-        if (newVersionRole.trim() && onCreateVersion) {
-            onCreateVersion(newVersionRole);
-            setNewVersionRole('');
-            setShowVersionInput(false);
-        }
-    };
 
     const hasParsedSections = Object.keys(sections).length > 1;
     const rawContentFallback = !hasParsedSections && sections['HEADER'] ? sections['HEADER'] : null;
 
-    let containerClass = "p-10 min-h-[800px] shadow-sm bg-white text-slate-800 text-sm leading-relaxed transition-all duration-300 relative";
-    let nameClass = "text-3xl font-bold uppercase tracking-wide";
-    let contactClass = "text-sm text-slate-600 mt-1 flex flex-wrap gap-x-4 items-center";
-    let sectionTitleClass = "text-base font-bold uppercase mt-6 mb-3 border-b border-slate-300 pb-1";
-    let bodyClass = "whitespace-pre-line text-slate-700 leading-relaxed";
+    // Reduced base sizes
+    let containerClass = "p-6 min-h-[800px] shadow-sm bg-white text-slate-800 text-[11px] leading-relaxed transition-all duration-300 relative";
+    let nameClass = "text-xl font-bold uppercase tracking-wide";
+    let contactClass = "text-[10px] text-slate-600 mt-1 flex flex-wrap gap-x-3 items-center";
+    let sectionTitleClass = "text-xs font-bold uppercase mt-4 mb-2 border-b border-slate-300 pb-1";
+    let bodyClass = "whitespace-pre-line text-slate-700 text-[10px] leading-5";
 
     if (template === 'Classic') {
         containerClass += " font-serif text-slate-900 max-w-[850px] mx-auto";
-        nameClass = "text-4xl font-serif text-center mb-2 tracking-tight text-slate-900";
-        contactClass = "text-sm text-slate-600 justify-center mb-8 font-serif flex flex-wrap gap-x-4";
-        sectionTitleClass = "text-lg font-serif font-bold border-b border-slate-900 mt-6 mb-3 uppercase tracking-wider text-slate-900";
+        nameClass = "text-2xl font-serif text-center mb-1 tracking-tight text-slate-900";
+        contactClass = "text-[10px] text-slate-600 justify-center mb-5 font-serif flex flex-wrap gap-x-4";
+        sectionTitleClass = "text-xs font-serif font-bold border-b border-slate-900 mt-4 mb-2 uppercase tracking-wider text-slate-900";
         bodyClass += " font-serif";
     } else if (template === 'Modern') {
         containerClass += " font-sans max-w-[850px] mx-auto";
-        nameClass = "text-5xl font-extrabold text-blue-800 mb-2 tracking-tight";
-        contactClass = "text-sm font-medium text-blue-600/80 mb-8 flex flex-wrap gap-x-6 items-center";
-        sectionTitleClass = "text-blue-800 font-bold text-lg mt-8 mb-3 uppercase tracking-widest flex items-center gap-2 before:content-[''] before:w-1 before:h-5 before:bg-blue-600 before:mr-2";
+        nameClass = "text-3xl font-extrabold text-blue-800 mb-1 tracking-tight";
+        contactClass = "text-[10px] font-medium text-blue-600/80 mb-5 flex flex-wrap gap-x-4 items-center";
+        sectionTitleClass = "text-blue-800 font-bold text-xs mt-5 mb-2 uppercase tracking-widest flex items-center gap-2 before:content-[''] before:w-1 before:h-3 before:bg-blue-600 before:mr-1";
     } else if (template === 'Minimalist') {
-        containerClass += " font-sans max-w-[850px] mx-auto border border-slate-100";
-        nameClass = "text-3xl font-light text-slate-900 mb-1 tracking-wide";
-        contactClass = "text-xs text-slate-400 mb-10 flex flex-wrap gap-x-6 items-center border-t border-slate-100 pt-2";
-        sectionTitleClass = "text-xs font-black text-slate-400 mt-10 mb-4 uppercase tracking-[0.2em]";
-        bodyClass += " text-slate-600 text-xs";
+        // Clean sans-serif, ample whitespace, limited palette
+        containerClass += " font-sans max-w-[850px] mx-auto border border-slate-100 bg-white";
+        nameClass = "text-2xl font-light text-slate-900 mb-1 tracking-wide";
+        contactClass = "text-[9px] text-slate-500 mb-6 flex flex-wrap gap-x-4 items-center tracking-wide";
+        sectionTitleClass = "text-[10px] font-black text-slate-800 mt-6 mb-3 uppercase tracking-[0.2em] border-none";
+        bodyClass += " text-slate-600 text-[10px] leading-5";
     } else if (template === 'Creative') {
+        // Modern typography, bolder color scheme
         containerClass += " font-sans bg-slate-50 max-w-[850px] mx-auto";
-        nameClass = "text-5xl font-black text-purple-700 mb-1";
-        contactClass = "text-sm font-semibold text-purple-900/60 mb-8 flex flex-wrap gap-x-4";
-        sectionTitleClass = "text-white font-bold text-sm mt-8 mb-4 bg-purple-600 px-4 py-1.5 rounded-r-full inline-block shadow-sm";
+        nameClass = "text-4xl font-black text-purple-700 mb-1 tracking-tighter";
+        contactClass = "text-[11px] font-bold text-purple-900/70 mb-6 flex flex-wrap gap-x-4";
+        sectionTitleClass = "text-white font-bold text-[10px] mt-6 mb-3 bg-purple-600 px-3 py-1 rounded-r-full inline-block shadow-lg shadow-purple-200 transform -translate-x-6 pl-6";
     } else if (template === 'Elegant') {
-        containerClass += " font-serif text-slate-800 border-t-[12px] border-amber-700 bg-[#fffdf5] max-w-[850px] mx-auto";
-        nameClass = "text-5xl font-serif text-amber-900 mb-4 pb-4 border-b border-amber-200/50";
-        contactClass = "text-base font-medium text-amber-800/70 mb-8 flex flex-wrap gap-x-6";
-        sectionTitleClass = "text-xl font-serif font-bold text-amber-900 mt-8 mb-4 border-b border-amber-200 pb-2 flex justify-between items-end";
-        bodyClass += " text-amber-950/80 leading-7";
+        containerClass += " font-serif bg-[#FFFCF5] text-stone-800 border-y-[6px] border-double border-amber-800/20 max-w-[850px] mx-auto";
+        nameClass = "text-3xl font-serif text-amber-900 mb-2 pb-2 border-b border-amber-900/10 text-center";
+        contactClass = "text-[10px] font-medium text-amber-800/70 mb-6 flex flex-wrap gap-x-4 justify-center italic";
+        sectionTitleClass = "text-sm font-serif font-bold text-amber-900 mt-5 mb-2 border-b border-amber-900/20 pb-1 flex items-center gap-2 before:content-['◆'] before:text-[8px] before:text-amber-500/50";
+        bodyClass += " text-stone-700 leading-5 font-serif text-[10px]";
     } else if (template === 'Executive') {
-        containerClass += " font-sans bg-slate-900 text-slate-300 border-l-[16px] border-slate-800 max-w-[850px] mx-auto";
-        nameClass = "text-5xl font-bold text-white uppercase tracking-widest mb-2";
-        contactClass = "text-xs font-bold text-slate-900 bg-slate-200 inline-flex px-4 py-1.5 mb-10 mt-2 rounded-sm tracking-wider flex-wrap gap-x-4";
-        sectionTitleClass = "font-black text-slate-900 bg-white px-3 py-1 uppercase text-sm mt-10 mb-5 inline-block tracking-widest transform -skew-x-12 shadow-[4px_4px_0px_rgba(255,255,255,0.2)]";
-        bodyClass += " text-slate-300 font-light tracking-wide leading-7";
+        containerClass += " font-sans bg-slate-900 text-slate-300 border-l-[6px] border-blue-600 max-w-[850px] mx-auto shadow-2xl";
+        nameClass = "text-2xl font-black text-white uppercase tracking-widest mb-1";
+        contactClass = "text-[9px] font-bold text-slate-900 bg-white inline-flex px-3 py-1 mb-6 mt-2 tracking-wider gap-3 uppercase";
+        sectionTitleClass = "font-black text-blue-400 text-[10px] mt-6 mb-3 uppercase tracking-[0.25em] flex items-center after:content-[''] after:flex-1 after:h-px after:bg-slate-700 after:ml-4";
+        bodyClass += " text-slate-400 font-light tracking-wide leading-5 text-[10px]";
+    } else if (template === 'Professional') {
+        // Classic serif, balanced traditional layout
+        containerClass += " font-serif bg-white text-slate-800 max-w-[850px] mx-auto border-t-[6px] border-slate-800 shadow-md";
+        nameClass = "text-3xl font-bold text-slate-900 uppercase tracking-tight mb-1";
+        contactClass = "text-[11px] text-slate-600 mb-6 flex flex-wrap gap-x-4 items-center border-b border-slate-200 pb-4";
+        sectionTitleClass = "text-sm font-bold text-slate-900 uppercase tracking-widest mt-6 mb-3 border-b-2 border-slate-900 pb-1 inline-block w-full";
+        bodyClass += " text-slate-800 text-[11px] leading-5 text-justify";
     }
 
     const renderSection = (title: string, contentKey: string) => {
@@ -139,12 +133,12 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
         if (contentKey === 'SKILLS') {
              const skillList = content.split(/,|•|\n/).map(s => s.trim()).filter(s => s.length > 0);
              return (
-                 <div className="mb-6 resume-section section-skills">
+                 <div className="mb-3 resume-section section-skills">
                      <h3 className={`${sectionTitleClass} resume-section-title`}>{title}</h3>
-                     <div className="flex flex-wrap gap-2 mt-3">
+                     <div className="flex flex-wrap gap-1 mt-1.5">
                          {skillList.map((skill, idx) => (
-                             <span key={idx} className={`inline-flex items-center gap-1.5 px-3 py-1.5 border rounded-md text-xs font-semibold transition-colors ${template === 'Executive' ? 'bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700' : 'bg-white border-slate-200 text-slate-700 shadow-sm'}`}>
-                                 <TechIcon name={skill} className="w-3.5 h-3.5" />
+                             <span key={idx} className={`inline-flex items-center gap-1 px-1.5 py-0.5 border rounded text-[9px] font-semibold transition-colors ${template === 'Executive' ? 'bg-slate-800 border-slate-700 text-slate-300' : (template === 'Elegant' ? 'bg-amber-50/50 border-amber-100 text-amber-900' : 'bg-white border-slate-200 text-slate-700 shadow-sm')}`}>
+                                 <TechIcon name={skill} className="w-2.5 h-2.5" />
                                  {skill}
                              </span>
                          ))}
@@ -153,7 +147,7 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
              );
         }
         return (
-            <div className={`mb-6 resume-section section-${contentKey.toLowerCase()}`}>
+            <div className={`mb-3 resume-section section-${contentKey.toLowerCase()}`}>
                 <h3 className={`${sectionTitleClass} resume-section-title`}>{title}</h3>
                 <div className={`${bodyClass} resume-section-body`}>{content}</div>
             </div>
@@ -163,42 +157,9 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
     return (
         <div className="relative h-full flex flex-col" role="document">
             {userInput.customCSS && <style>{`#resume-preview-container { ${userInput.customCSS} }`}</style>}
-            {versions && versions.length > 0 && (
-                <div className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700 p-3 flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                         <label htmlFor="version-select" className="text-xs font-bold text-slate-400 uppercase tracking-wider">Version:</label>
-                         <div className="relative">
-                             <select id="version-select" value={activeVersionId} onChange={(e) => onVersionChange?.(e.target.value)} className="appearance-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 py-1.5 pl-3 pr-8 rounded-md text-sm font-semibold shadow-sm focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer hover:border-blue-400 transition-colors">
-                                 {versions.map(v => <option key={v.id} value={v.id}>{v.role} ({new Date(v.timestamp).toLocaleDateString()})</option>)}
-                             </select>
-                             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500"><svg className="h-4 w-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path></svg></div>
-                         </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        {!showVersionInput ? (
-                            <button onClick={() => setShowVersionInput(true)} className="px-3 py-1.5 rounded-md text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors flex items-center gap-1 whitespace-nowrap"><span>+</span> Create Version</button>
-                        ) : (
-                            <div className="flex items-center gap-2 animate-in slide-in-from-right-2 bg-white dark:bg-slate-800 p-1 rounded-md border border-slate-200 dark:border-slate-700 shadow-sm">
-                                <input type="text" autoFocus placeholder="Role (e.g. SDE II)..." className="text-xs px-2 py-1 rounded bg-transparent focus:outline-none w-32 dark:text-white" value={newVersionRole} onChange={e => setNewVersionRole(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleCreateVersion()} />
-                                <button onClick={handleCreateVersion} disabled={isGeneratingVersion} className="text-xs bg-blue-600 text-white px-2 py-1 rounded font-bold hover:bg-blue-700 disabled:opacity-50">{isGeneratingVersion ? '...' : 'Go'}</button>
-                                <button onClick={() => setShowVersionInput(false)} className="text-slate-400 hover:text-slate-600 px-1">✕</button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            <div id="resume-preview-container" className={`${containerClass} ${isBlurred ? 'blur-md select-none overflow-hidden h-[600px] opacity-80' : 'h-full'}`}>
-                {isGeneratingVersion && (
-                    <div className="absolute inset-0 z-20 bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm flex items-center justify-center rounded-lg animate-in fade-in duration-300">
-                        <div className="flex flex-col items-center p-6 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700">
-                            <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
-                            <span className="text-sm font-bold text-slate-800 dark:text-white">Rewriting Resume...</span>
-                            <span className="text-xs text-slate-500 mt-1">Tailoring for target role</span>
-                        </div>
-                    </div>
-                )}
-                <div className={`mb-8 resume-header ${template === 'Classic' || template === 'Elegant' ? "text-center" : ""}`}>
+            
+            <div id="resume-preview-container" className={`${containerClass} ${isBlurred ? 'blur-sm select-none overflow-hidden h-[600px] opacity-90' : 'h-full'}`}>
+                <div className={`mb-4 resume-header`}>
                      <div className={nameClass}>{userInput.fullName || 'Your Name'}</div>
                      <div className={contactClass}>
                         <span className="flex items-center gap-1 whitespace-nowrap">📧 {userInput.email}</span>
@@ -208,9 +169,9 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
                      </div>
                 </div>
                 {rawContentFallback ? (
-                    <div className="mb-4">
-                        <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg text-xs text-amber-800 dark:text-amber-300 mb-4 flex gap-2">
-                           <span>⚠️</span> <div><strong>Format Warning:</strong> The AI returned unstructured text. Displaying raw content below.</div>
+                    <div className="mb-3">
+                        <div className="p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg text-[10px] text-amber-800 dark:text-amber-300 mb-3 flex gap-2">
+                           <span>⚠️</span> <div><strong>Format Warning:</strong> Raw AI text.</div>
                         </div>
                         <div className={bodyClass}>{clean(rawContentFallback)}</div>
                     </div>
@@ -225,13 +186,14 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({
                     </>
                 )}
             </div>
+
             {isBlurred && (
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/30 backdrop-blur-sm rounded-lg animate-in fade-in">
-                    <div className="bg-slate-900 p-8 rounded-2xl shadow-2xl text-center max-w-sm border border-slate-700 text-white transform hover:scale-105 transition-transform duration-300">
-                        <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-amber-500/20"><span className="text-2xl" aria-hidden="true">🔒</span></div>
-                        <h3 className="text-xl font-bold text-white mb-2">Elite Template Locked</h3>
-                        <p className="text-slate-400 mb-6 text-sm">Unlock the <strong>{template}</strong> design and advanced AI analysis tools.</p>
-                        <button onClick={onUnlock} className="w-full py-3 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-bold rounded-lg shadow-lg transform transition hover:scale-[1.02]">Unlock Everything - ₹25</button>
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/30 backdrop-blur-[2px] rounded-lg animate-in fade-in duration-500">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-2xl text-center max-w-xs border border-slate-100 dark:border-slate-700 transform hover:scale-105 transition-transform duration-300">
+                        <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-amber-500/30 -rotate-3"><span className="text-2xl" aria-hidden="true">🔒</span></div>
+                        <h3 className="text-lg font-black text-slate-900 dark:text-white mb-1 tracking-tight">Premium Template</h3>
+                        <p className="text-slate-500 dark:text-slate-400 mb-6 text-xs font-medium leading-relaxed">Unlock the <strong>{template}</strong> design.</p>
+                        <button onClick={onUnlock} className="w-full py-3 px-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-xs rounded-xl shadow-lg hover:shadow-xl transform transition active:scale-95">Unlock Now • ₹29</button>
                     </div>
                 </div>
             )}

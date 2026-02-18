@@ -1,237 +1,267 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { UserInput, JobToolkit, ResumeAnalysis } from '../types';
-
-// Shared Schema Definitions
-const roadmapSchema = {
-  type: Type.ARRAY,
-  items: {
-    type: Type.OBJECT,
-    properties: {
-        phase: { type: Type.STRING },
-        duration: { type: Type.STRING },
-        title: { type: Type.STRING },
-        description: { type: Type.STRING },
-        tools: { type: Type.ARRAY, items: { type: Type.STRING } },
-        milestones: { 
-            type: Type.ARRAY, 
-            items: { type: Type.STRING },
-            description: "3-4 highly specific, actionable tasks to complete this phase (e.g., 'Build a JWT Auth System', not just 'Learn Auth')."
-        },
-        resources: {
-            type: Type.ARRAY,
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    title: { type: Type.STRING, description: "Specific book title, course name, or tool." },
-                    type: { type: Type.STRING, enum: ["Course", "Book", "Tool"] }
-                }
-            }
-        }
-    }
-  }
-};
-
-const coreResponseSchema = {
-  type: Type.OBJECT,
-  properties: {
-    resume: { type: Type.STRING, description: "A clean, ATS-friendly resume markdown text." },
-    coverLetter: { type: Type.STRING, description: "A formal cover letter with placeholders." },
-    linkedin: {
-      type: Type.OBJECT,
-      properties: {
-        headline: { type: Type.STRING },
-        alternativeHeadlines: { type: Type.ARRAY, items: { type: Type.STRING } },
-        bio: { type: Type.STRING },
-      },
-    },
-    mockInterview: {
-      type: Type.OBJECT,
-      properties: {
-        intro: { type: Type.STRING },
-        questions: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              question: { type: Type.STRING },
-              feedback: { type: Type.STRING },
-            },
-          },
-        },
-        outro: { type: Type.STRING },
-      },
-    },
-    careerRoadmap: roadmapSchema,
-  },
-};
-
-const eliteResponseSchema = {
-  type: Type.OBJECT,
-  properties: {
-    recruiterPsychology: { type: Type.STRING, description: "Psychological analysis of the candidate's perception." },
-    salaryNegotiation: { type: Type.STRING, description: "Tailored negotiation script." },
-    coldEmail: { type: Type.STRING },
-    hrEmail: { type: Type.STRING },
-    linkedinPitch: { type: Type.STRING },
-    followUpEmail: { type: Type.STRING },
-    referralEmail: { type: Type.STRING },
-    suggestedCourses: {
-        type: Type.ARRAY,
-        items: {
-            type: Type.OBJECT,
-            properties: {
-                title: { type: Type.STRING, description: "Course name." },
-                provider: { type: Type.STRING, description: "Platform name (e.g. Coursera, Udemy)." },
-                reason: { type: Type.STRING, description: "Why this bridges their specific skill gap." }
-            }
-        }
-    }
-  }
-};
-
-const internshipSchema = {
-  type: Type.OBJECT,
-  properties: {
-    searchQueries: { type: Type.ARRAY, items: { type: Type.STRING } },
-    platforms: { type: Type.ARRAY, items: { type: Type.STRING } },
-    strategy: { type: Type.STRING }
-  }
-};
-
-const analysisSchema = {
-  type: Type.OBJECT,
-  properties: {
-    score: { type: Type.NUMBER },
-    strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
-    improvements: { type: Type.ARRAY, items: { type: Type.STRING } },
-    missingKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
-    jobFitPrediction: { type: Type.STRING },
-  },
-};
-
-const profileImportSchema = {
-  type: Type.OBJECT,
-  properties: {
-    fullName: { type: Type.STRING },
-    email: { type: Type.STRING },
-    phone: { type: Type.STRING },
-    linkedinGithub: { type: Type.STRING },
-    careerObjective: { type: Type.STRING },
-    education: { type: Type.STRING },
-    skills: { type: Type.STRING },
-    projects: { type: Type.STRING },
-    internships: { type: Type.STRING },
-    certifications: { type: Type.STRING },
-    interests: { type: Type.STRING },
-  }
-};
+import { UserInput, JobToolkit, ResumeAnalysis, InterviewFeedback } from '../types';
 
 const extractJson = (text: string): string => {
   const startIndex = text.indexOf('{');
   const endIndex = text.lastIndexOf('}');
-  if (startIndex === -1) {
-     const arrayStart = text.indexOf('[');
-     const arrayEnd = text.lastIndexOf(']');
-     if (arrayStart !== -1 && arrayEnd !== -1) return text.substring(arrayStart, arrayEnd + 1);
-  }
-  if (startIndex === -1 || endIndex === -1) throw new Error("Response did not contain valid JSON.");
+  if (startIndex === -1 || endIndex === -1) return "{}";
   return text.substring(startIndex, endIndex + 1);
 };
 
-const generateWithFallback = async (primaryModel: string, fallbackModel: string, contents: string, config: any) => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const generateWithFallback = async (modelName: string, prompt: string, config: any) => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  try {
+    const response = await ai.models.generateContent({
+      model: modelName,
+      contents: prompt,
+      config: config,
+    });
+    return response.text || "";
+  } catch (error) {
+    console.error("Gemini Error:", error);
+    // Fallback to a lightweight model if the primary fails
     try {
-        const response = await ai.models.generateContent({
-            model: primaryModel,
-            contents: contents,
-            config: config,
+        const fallback = await ai.models.generateContent({
+            model: 'gemini-flash-lite-latest',
+            contents: prompt,
+            config: { ...config, thinkingConfig: undefined }
         });
-        return response;
-    } catch (error: any) {
-        const isRetryable = error.message?.includes('429') || error.message?.includes('503') || error.message?.includes('Quota');
-        if (isRetryable && fallbackModel) {
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            return await ai.models.generateContent({
-                model: fallbackModel,
-                contents: contents,
-                config: { ...config, thinkingConfig: undefined },
-            });
-        }
-        throw error;
+        return fallback.text || "";
+    } catch (fallbackError) {
+        console.error("Fallback Error:", fallbackError);
+        return "";
     }
-};
-
-export const parseProfileData = async (text: string): Promise<Partial<UserInput>> => {
-    const config = { responseMimeType: "application/json", responseSchema: profileImportSchema, systemInstruction: "Extract career profile info into JSON.", temperature: 0.1 };
-    const response = await generateWithFallback("gemini-3-flash-preview", "gemini-flash-lite-latest", text, config);
-    return JSON.parse(extractJson(response.text || "{}"));
+  }
 };
 
 export const generateJobToolkit = async (data: UserInput): Promise<JobToolkit> => {
-  const systemInstruction = `You are "JobHero AI", an elite Hiring Manager. Create a professional toolkit. Return JSON. Resume: Use headers on NEW LINES. Roadmap: Gap analysis. Mock Interview: 10 diverse questions. Tone: Professional and bespoke.`;
-  const userContent = `Name: ${data.fullName} | Role: ${data.jobRoleTarget} | Skills: ${data.skills} | Projects: ${data.projects} | Exp: ${data.internships} | Current Year: ${data.currentYear}`;
-  const config = { responseMimeType: "application/json", responseSchema: coreResponseSchema, temperature: 0.4, systemInstruction };
-  const response = await generateWithFallback("gemini-3-flash-preview", "gemini-flash-lite-latest", userContent, config);
-  return JSON.parse(extractJson(response.text || "{}")) as JobToolkit;
-};
+  const projectsString = data.projectsList && data.projectsList.length > 0 
+      ? data.projectsList.map((p, i) => `${i+1}. ${p.name} (${p.startDate} - ${p.endDate}) [${p.link}]: ${p.description}`).join('\n')
+      : data.projects;
 
-export const generateTargetedResume = async (data: UserInput, targetRole: string): Promise<string> => {
-  const systemInstruction = `Expert resume writer. Rewrite for: "${targetRole}". Return ONLY clean text. Headers on new lines. Bullet points: ➤.`;
-  const userContent = `Target: ${targetRole}. Bio: ${data.careerObjective}. Skills: ${data.skills}. Exp: ${data.internships}. Projects: ${data.projects}`;
-  const response = await generateWithFallback("gemini-3-flash-preview", "gemini-flash-lite-latest", userContent, { temperature: 0.4, systemInstruction });
-  return response.text || "";
-};
+  // Enhanced system instruction for human-like, high-impact content
+  const systemInstruction = `You are an elite Career Strategist and Executive Resume Writer known for creating "human-centric" yet high-performance job applications. 
+  
+  YOUR GOAL: Generate a Job Toolkit that sounds authentic, professional, and distinctively NOT AI-generated.
+  
+  WRITING RULES:
+  1.  **NO ROBOTIC PHRASES**: Avoid "I am writing to express my interest", "passionate about", "synergies", "delve into", or "showcase". Use direct, active language.
+  2.  **RESUME**: Use the "Google XYZ Formula" (Accomplished [X] as measured by [Y], by doing [Z]). If metrics aren't provided, focus on the *impact* and *scale* of the work. Use strong verbs like "Architected", "Engineered", "Orchestrated", not just "Worked on" or "Helped".
+  3.  **COVER LETTER**: Use a storytelling approach. Hook the reader in the first sentence with a specific achievement or connection to the company's mission. Do not summarize the resume; explain the *motivation*.
+  4.  **LINKEDIN**: Conversational and authoritative (1st person). Use hooks. Avoid being dry.
+  
+  STRICT JSON OUTPUT FORMAT REQUIRED:
+  {
+    "resume": "Markdown string. Use ### for section headers.",
+    "coverLetter": "Markdown string. Professional but engaging tone.",
+    "linkedin": {
+      "headlines": ["Headline 1 (Role | Key Skill | USP)", "Headline 2", "Headline 3"],
+      "bio": "Engaging 'About' section for LinkedIn. Use 1st person."
+    },
+    "mockInterview": {
+      "questions": [
+        { "question": "Q1", "context": "Context", "feedback": "Tips" },
+        // ... up to 10
+      ]
+    },
+    "careerRoadmap": [
+      { "phase": "Week 1-2", "title": "Step 1", "description": "Details", "tools": ["Tool A"], "milestones": ["Done X"] },
+      // ... up to 4 steps
+    ]
+  }`;
+  
+  const prompt = `
+  Generate a bespoke Job Toolkit for:
+  CANDIDATE: ${data.fullName}
+  TARGET ROLE: ${data.jobRoleTarget}
+  TARGET COMPANY: ${data.company}
+  MOTIVATION: ${data.whyThisRole}
+  INTERESTS: ${data.interests}
+  
+  RAW DATA:
+  - Skills: ${data.skills}
+  - Experience: ${data.internships}
+  - Projects: ${projectsString}
+  - Education: ${data.education}
+  - Schooling: Class 12: ${data.school12th}, Class 10: ${data.school10th}
+  - Bio Input: ${data.careerObjective}
+  
+  INSTRUCTIONS:
+  1. **Resume**: Optimize for ${data.jobRoleTarget} at ${data.company}. Tailor the summary and skills to align with ${data.company}'s known values or industry standing. If project descriptions are weak, enhance them with technical details.
+  2. **Cover Letter**: Address it to the hiring manager at ${data.company}. Weave in the candidate's motivation ("${data.whyThisRole}") naturally.
+  3. **LinkedIn**: Create 3 distinct headlines (one creative, one professional, one keyword-heavy).
+  4. **Interview**: Generate 10 challenging questions specific to ${data.jobRoleTarget} at ${data.company}. Include behavioral questions that check for culture fit.
+  5. **Roadmap**: 4 concrete steps to land this role at ${data.company}.
+  `;
+  
+  // Using slightly higher temperature for more natural/creative phrasing
+  const responseText = await generateWithFallback('gemini-3-flash-preview', prompt, {
+    responseMimeType: "application/json",
+    temperature: 0.4,
+    systemInstruction
+  });
+  
+  try {
+    const json = JSON.parse(extractJson(responseText));
+    
+    // Default Fallbacks
+    if (!json.resume) json.resume = "## Error Generating Resume\nPlease try regenerating.";
+    if (!json.coverLetter) json.coverLetter = "Error generating cover letter.";
+    if (!json.linkedin || !json.linkedin.headlines) json.linkedin = { headlines: ["Software Engineer", "Developer"], bio: "Passionate developer..." };
+    if (!json.mockInterview || !json.mockInterview.questions) json.mockInterview = { questions: [] };
+    if (!json.careerRoadmap) json.careerRoadmap = [];
 
-export const regenerateLinkedInBio = async (currentBio: string, tone: string): Promise<string> => {
-    const systemInstruction = `Rewrite LinkedIn Bio to tone: "${tone}". Output ONLY the text.`;
-    const response = await generateWithFallback("gemini-3-flash-preview", "gemini-flash-lite-latest", currentBio, { temperature: 0.7, systemInstruction });
-    return response.text || "";
-};
-
-export const generateEliteTools = async (data: UserInput): Promise<Partial<JobToolkit>> => {
-    const systemInstruction = `
-      You are "JobHero AI Elite Strategy Engine". 
-      Generate a bespoke career advancement kit.
-      
-      CRITICAL: Analyze the user's current skills (${data.skills}) and education (${data.education}) 
-      against their target role of "${data.jobRoleTarget}" at "${data.company}".
-      
-      1. Identify 3 high-impact skills they are missing for a top-tier role.
-      2. Suggest 3 specific, recognized courses or certifications (e.g., AWS Certified Developer, Meta React Professional, etc.) 
-         that would bridge this gap. Include provider (Coursera, Udemy, etc.) and a compelling reason why.
-      3. Generate deep Recruiter Psychology analysis.
-      4. Create salary negotiation scripts and high-conversion networking emails.
-      
-      Return JSON matching the eliteResponseSchema.
-    `;
-    const userContent = `User: ${data.fullName}. Targeting: ${data.jobRoleTarget} at ${data.company}. Skills: ${data.skills}. Exp: ${data.internships}. Year: ${data.currentYear}`;
-    const config = { responseMimeType: "application/json", responseSchema: eliteResponseSchema, temperature: 0.4, systemInstruction };
-    const response = await generateWithFallback("gemini-3-flash-preview", "gemini-flash-lite-latest", userContent, config);
-    return JSON.parse(extractJson(response.text || "{}"));
-};
-
-export const generateInternshipFinder = async (data: UserInput, resumeText: string): Promise<JobToolkit['internshipHunter']> => {
-    const systemInstruction = `Expert Career Hacker. Generate Universal Search strategy for ${data.currentYear} students seeking ${data.jobRoleTarget} roles. Return JSON with 5 boolean queries, platforms, and 1 high-impact hack.`;
-    const response = await generateWithFallback("gemini-3-flash-preview", "gemini-flash-lite-latest", `Resume: ${resumeText}`, { responseMimeType: "application/json", responseSchema: internshipSchema, temperature: 0.5, systemInstruction });
-    return JSON.parse(extractJson(response.text || "{}"));
-};
-
-export const regenerateCareerRoadmap = async (data: UserInput, newRole: string, useThinkingModel: boolean = false): Promise<JobToolkit['careerRoadmap']> => {
-  const model = useThinkingModel ? "gemini-3-pro-preview" : "gemini-3-flash-preview";
-  const config: any = { responseMimeType: "application/json", responseSchema: roadmapSchema, systemInstruction: `Expert Coach. Create detailed roadmap to become "${newRole}". Return JSON Array.` };
-  if (useThinkingModel) config.thinkingConfig = { thinkingBudget: 8000 };
-  const response = await generateWithFallback(model, "gemini-3-flash-preview", `Target: ${newRole}. Current Skills: ${data.skills}`, config);
-  return JSON.parse(extractJson(response.text || "[]"));
+    return json;
+  } catch (e) {
+    console.error("JSON Parse Error", e);
+    return {
+        resume: "Error generating content. Please try again.",
+        coverLetter: "",
+        linkedin: { headlines: [], bio: "" },
+        mockInterview: { questions: [] },
+        careerRoadmap: []
+    };
+  }
 };
 
 export const analyzeResume = async (resumeText: string, jobRole: string): Promise<ResumeAnalysis> => {
-  const config = { responseMimeType: "application/json", responseSchema: analysisSchema, systemInstruction: `ATS Algorithm. Analyze for "${jobRole}". Return JSON.`, temperature: 0.1 };
-  const response = await generateWithFallback("gemini-3-flash-preview", "gemini-flash-lite-latest", resumeText, config);
-  return JSON.parse(extractJson(response.text || "{}")) as ResumeAnalysis;
+  const systemInstruction = `You are a Senior Technical Recruiter and ATS (Applicant Tracking System) Algorithm Specialist. 
+  Your goal is to optimize the resume specifically for the role of "${jobRole}".
+  
+  Analyze the resume text deeply. Identify high-impact technical skills, industry keywords, and soft skills that are missing but crucial for this role to pass automated filters.
+
+  Return a strictly valid JSON object with this structure:
+  {
+    "score": number (0-100),
+    "summary": "A concise executive summary of the resume's current standing.",
+    "missingKeywords": [
+        {
+            "keyword": "The specific missing term (e.g., 'Docker')",
+            "context": "The domain/category where this fits (e.g., 'Containerization', 'Agile Methodology', 'Core Java')",
+            "reason": "Why this is non-negotiable for ${jobRole}.",
+            "integrationTip": "A specific, natural sentence or bullet point example showing exactly how to include this in the resume (e.g., 'Update Project X to say: Orchestrated deployment using [keyword] to reduce downtime...')"
+        }
+    ],
+    "strengths": ["List 3 key strengths found"],
+    "improvements": ["List 3 actionable formatting or content improvements"]
+  }
+  
+  CRITICAL: 
+  - Provide at least 5 missing keywords.
+  - Ensure 'integrationTip' is NOT generic. Synthesize a plausible bullet point based on the resume's probable context.
+  - Be strict with the score.
+  `;
+
+  const responseText = await generateWithFallback('gemini-3-flash-preview', resumeText, {
+    responseMimeType: "application/json",
+    temperature: 0.1,
+    systemInstruction
+  });
+  return JSON.parse(extractJson(responseText));
 };
 
-export const evaluateInterviewAnswer = async (question: string, answer: string, role: string): Promise<string> => {
-  const systemInstruction = `Strict Interview Coach. Evaluate answer for "${role}". Format: Rating, Analysis, Improvement.`;
-  const response = await generateWithFallback("gemini-3-flash-preview", "gemini-flash-lite-latest", `Q: ${question} A: ${answer}`, { temperature: 0.2, systemInstruction });
-  return response.text || "Could not generate feedback.";
+export const generateEliteTools = async (data: UserInput): Promise<Partial<JobToolkit>> => {
+    const prompt = `Generate JSON: { "recruiterPsychology": "text", "salaryNegotiation": "text" } for role ${data.jobRoleTarget}.`;
+    const responseText = await generateWithFallback('gemini-3-flash-preview', prompt, {
+        responseMimeType: "application/json",
+        temperature: 0.2
+    });
+    return JSON.parse(extractJson(responseText));
+};
+
+export const regenerateCareerRoadmap = async (data: UserInput, newRole: string, useThinking: boolean): Promise<any> => {
+    const model = useThinking ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
+    // Incorporate user profile for better tailoring
+    const prompt = `
+    Context: Candidate with skills "${data.skills}" and background "${data.education}".
+    Task: Create a 4-step career roadmap to become a "${newRole}".
+    Focus: Bridge the gap between current skills and target role requirements.
+    Output: Return strictly a JSON object with a "careerRoadmap" array.
+    `;
+    const config: any = { responseMimeType: "application/json" };
+    if (useThinking) config.thinkingConfig = { thinkingBudget: 1024 };
+    const responseText = await generateWithFallback(model, prompt, config);
+    return JSON.parse(extractJson(responseText));
+};
+
+export const analyzeInterviewAnswer = async (question: string, userAnswer: string, role: string, company: string): Promise<InterviewFeedback> => {
+    const systemInstruction = `You are a senior hiring manager at ${company} interviewing a candidate for a ${role} position. 
+    Analyze the candidate's answer to the question: "${question}".
+    
+    Provide output in strict JSON format:
+    {
+        "rating": number (1-10),
+        "clarity": "Feedback on clarity and conciseness",
+        "relevance": "Feedback on relevance to the role/company",
+        "missingPoints": ["Key point 1 to add", "Key point 2 to add"],
+        "sampleAnswer": "A concise, ideal response example"
+    }`;
+
+    const responseText = await generateWithFallback('gemini-3-flash-preview', `Candidate Answer: "${userAnswer}"`, {
+        responseMimeType: "application/json",
+        temperature: 0.2,
+        systemInstruction
+    });
+    return JSON.parse(extractJson(responseText));
+};
+
+export const parseProfileData = async (text: string): Promise<Partial<UserInput>> => {
+    const prompt = `Extract user profile from text to JSON: { "fullName": "", "email": "", "skills": "", "projects": "", "internships": "", "education": "", "school12th": "", "school10th": "" }.\nText: ${text}`;
+    const responseText = await generateWithFallback('gemini-3-flash-preview', prompt, { responseMimeType: "application/json" });
+    return JSON.parse(extractJson(responseText));
+};
+
+export const generateTargetedResume = async (data: UserInput, role: string): Promise<string> => {
+    const systemInstruction = `You are a professional resume writer. Rewrite the provided resume content specifically for a ${role} position. 
+    Use strong action verbs, quantify achievements where possible, and ensure a clean Markdown format with headers (###).
+    Avoid generic phrases. Focus on impact.`;
+    
+    const prompt = `
+    Candidate: ${data.fullName}
+    Target Role: ${role}
+    Original Resume Content (Context):
+    Skills: ${data.skills}
+    Experience: ${data.internships}
+    Projects: ${data.projectsList ? JSON.stringify(data.projectsList) : data.projects}
+    Education: ${data.education}
+    `;
+
+    return await generateWithFallback('gemini-3-flash-preview', prompt, { 
+        temperature: 0.3,
+        systemInstruction 
+    });
+};
+
+export const fetchCompanyInsights = async (company: string) => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const prompt = `Analyze ${company} for a job applicant. 
+  Provide a concise summary including:
+  1. Mission Statement
+  2. Core Values
+  3. 2-3 Recent Key News Headlines (from late 2024-2025)
+  
+  Format clearly with bold headers.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+      config: {
+        tools: [{ googleSearch: {} }],
+      }
+    });
+
+    const text = response.text || "No insights found.";
+    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+    const sources = chunks
+        .map((c: any) => c.web?.uri)
+        .filter((u: string) => typeof u === 'string' && u.length > 0);
+    
+    const uniqueSources = Array.from(new Set(sources));
+
+    return { text, sources: uniqueSources as string[] };
+  } catch (error) {
+    console.error("Company Insight Error:", error);
+    return { text: "Unable to fetch company insights at this time.", sources: [] };
+  }
 };
