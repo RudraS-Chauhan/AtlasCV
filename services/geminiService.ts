@@ -1,13 +1,28 @@
 import { GoogleGenAI } from "@google/genai";
 import { UserInput, JobToolkit, ResumeAnalysis, InterviewFeedback, RoadmapStep } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+let ai: GoogleGenAI | null = null;
 const MODEL_NAME = "gemini-3-flash-preview";
+
+const getAI = () => {
+  if (!ai) {
+    // Safe access to process.env for Vercel/Browser environments where it might not be defined immediately
+    const apiKey = (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY) || 
+                   (import.meta?.env?.VITE_GEMINI_API_KEY) || 
+                   "";
+    
+    if (!apiKey) {
+      console.error("Gemini API Key is missing. Please set VITE_GEMINI_API_KEY in your environment.");
+    }
+    ai = new GoogleGenAI({ apiKey });
+  }
+  return ai;
+};
 
 // Helper to call Gemini with JSON response
 async function callGeminiJSON<T>(prompt: string): Promise<T> {
   try {
-    const response = await ai.models.generateContent({
+    const response = await getAI().models.generateContent({
       model: MODEL_NAME,
       contents: prompt,
       config: {
