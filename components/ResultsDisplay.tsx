@@ -307,7 +307,11 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
   };
 
   const handlePayment = () => {
-      const keyId = (window as any).process?.env?.VITE_RAZORPAY_KEY_ID;
+      // Robust key retrieval for Vite/Vercel
+      const keyId = import.meta.env.VITE_RAZORPAY_KEY_ID || 
+                    (window as any).process?.env?.VITE_RAZORPAY_KEY_ID || 
+                    "";
+
       const expiryTime = Date.now() + 24 * 60 * 60 * 1000;
 
       if (!keyId || keyId === '') {
@@ -332,6 +336,13 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
       };
       try { const rzp1 = new window.Razorpay(options); rzp1.open(); } catch (e) { alert("Razorpay SDK Error"); }
   };
+
+  // Auto-sync Elite tools when Pro is active
+  useEffect(() => {
+    if (isPro && !toolkit.recruiterPsychology && !isSyncingElite) {
+        syncElite();
+    }
+  }, [isPro]);
 
   const runAnalysis = async () => {
       setIsAnalyzing(true);

@@ -155,13 +155,26 @@ export const analyzeResume = async (resumeText: string, jobRole: string): Promis
 
 export const generateEliteTools = async (input: UserInput): Promise<Partial<JobToolkit>> => {
   const prompt = `
-    Generate elite career tools for:
+    You are a top-tier executive career coach and negotiation expert. Generate an "Elite Career Strategy Suite" for this candidate:
     ${JSON.stringify(input)}
     
+    1. **Recruiter Psychology & Hidden Insights:**
+       - Analyze how a recruiter or hiring manager for the role of "${input.jobRoleTarget}" at "${input.company}" would perceive this specific profile.
+       - Reveal "red flags" they might see and how to proactively address them.
+       - Identify the "X-Factor" in this profile that should be emphasized to stand out from 500+ applicants.
+       - Provide 3 specific "Psychological Hooks" to use in interviews to build immediate rapport.
+
+    2. **Advanced Salary Negotiation Script (Harvard Method):**
+       - Create a verbatim script for negotiating a higher salary for this specific role.
+       - Include a "Anchoring" statement.
+       - Provide a "Counter-Offer" script for when the initial offer is low.
+       - Include a "Value-Add" argument based on the candidate's specific skills (e.g., "${input.skills}").
+       - Tone: Professional, firm, yet collaborative.
+
     Return JSON with:
     {
-      "recruiterPsychology": "Insights on how recruiters view this profile...",
-      "salaryNegotiation": "Script for negotiating salary..."
+      "recruiterPsychology": "Full text of the analysis...",
+      "salaryNegotiation": "Full text of the negotiation scripts..."
     }
   `;
   return callGeminiJSON<Partial<JobToolkit>>(prompt);

@@ -145,11 +145,24 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({ steps }) =
                                         {step.resources.map((res, i) => (
                                             <a 
                                                 key={i} 
-                                                href="#" 
-                                                onClick={(e) => e.preventDefault()} 
-                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg text-[10px] font-bold hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                                                href={res.type === 'Premium' ? '#' : `https://www.google.com/search?q=${encodeURIComponent(res.title)}`}
+                                                target={res.type === 'Premium' ? '_self' : '_blank'}
+                                                rel="noopener noreferrer"
+                                                onClick={(e) => {
+                                                    if (res.type === 'Premium') {
+                                                        e.preventDefault();
+                                                        alert("🔒 Premium Resource: This content requires an upgrade to access.");
+                                                    }
+                                                }}
+                                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors ${
+                                                    res.type === 'Premium' 
+                                                    ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40 cursor-pointer' 
+                                                    : 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40'
+                                                }`}
                                             >
-                                                <span>📚</span> {res.title} <span className="opacity-50 font-normal">({res.type})</span>
+                                                <span>{res.type === 'Premium' ? '🔒' : '📚'}</span> 
+                                                {res.title} 
+                                                <span className="opacity-50 font-normal">({res.type})</span>
                                             </a>
                                         ))}
                                     </div>
