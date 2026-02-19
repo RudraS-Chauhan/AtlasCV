@@ -12,7 +12,9 @@ import { SearchIcon } from './icons/SearchIcon';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { CopyIcon } from './icons/CopyIcon';
 import { CheckIcon } from './icons/CheckIcon';
+import { ShareIcon } from './icons/ShareIcon';
 import { RefreshIcon } from './icons/RefreshIcon';
+import { RoadmapVisualizer } from './RoadmapVisualizer';
 
 declare global {
     interface Window {
@@ -207,6 +209,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
   const [userAnswers, setUserAnswers] = useState<Record<number, string>>({});
   const [feedback, setFeedback] = useState<Record<number, InterviewFeedback | null>>({});
   const [analyzingAnswer, setAnalyzingAnswer] = useState<number | null>(null);
+  const [isSharing, setIsSharing] = useState(false);
 
   useEffect(() => {
     if (!isPro) {
@@ -381,17 +384,114 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
       }
   };
 
-  const downloadPDF = (text: string, name: string) => {
-      const doc = new jsPDF();
-      doc.setFontSize(11);
-      doc.text(doc.splitTextToSize(text, 180), 10, 10);
-      doc.save(name);
+  const handleShare = async () => {
+      setIsSharing(true);
+      try {
+          // 1. Construct minimal data object
+          const shareData = {
+              n: userInput.fullName,
+              e: userInput.email,
+              p: userInput.phone,
+              l: userInput.linkedinGithub,
+              r: toolkit.resume,
+              t: selectedTemplate
+          };
+
+          // 2. Encode to Base64
+          const jsonStr = JSON.stringify(shareData);
+          const encoded = btoa(encodeURIComponent(jsonStr));
+
+          // 3. Construct URL
+          const url = `${window.location.origin}?shareData=${encoded}`;
+
+          // 4. Copy to clipboard
+          await navigator.clipboard.writeText(url);
+          alert("Resume link copied to clipboard! You can now share it.");
+      } catch (e) {
+          console.error("Sharing failed", e);
+          alert("Failed to generate share link.");
+      } finally {
+          setIsSharing(false);
+      }
+  };
+
+  const downloadPDF = async (text: string, name: string) => {
+      const element = document.getElementById('resume-preview-container');
+      if (!element) {
+          // Fallback to text if element not found
+          const doc = new jsPDF();
+          doc.setFontSize(11);
+          doc.text(doc.splitTextToSize(text, 180), 10, 10);
+          doc.save(name);
+          return;
+      }
+
+      try {
+          // Use html2canvas to capture the visual design
+          const canvas = await html2canvas(element, {
+              scale: 2, // Higher scale for better quality
+              useCORS: true,
+              logging: false,
+              backgroundColor: '#ffffff'
+          });
+
+          const imgData = canvas.toDataURL('image/png');
+          const pdf = new jsPDF('p', 'mm', 'a4');
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = pdf.internal.pageSize.getHeight();
+          const imgWidth = canvas.width;
+          const imgHeight = canvas.height;
+          const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+          const imgX = (pdfWidth - imgWidth * ratio) / 2;
+          const imgY = 0; // Top align
+
+          // Calculate height in PDF units
+          const imgHeightInPdf = imgHeight * ratio;
+          
+          // If content is longer than one page, we might need multi-page logic, 
+          // but for now, let's fit to width and allow it to be a single long image or scale to fit.
+          // A simple "scale to fit width" is usually best for resumes unless they are strictly multi-page.
+          // Given the preview is often a single view, we'll scale to fit width.
+          
+          const componentWidth = pdfWidth;
+          const componentHeight = (imgHeight * pdfWidth) / imgWidth;
+
+          // If height exceeds A4, we might need to split, but for this "snapshot" approach:
+          if (componentHeight > pdfHeight) {
+             // Multi-page approach (basic)
+             let heightLeft = componentHeight;
+             let position = 0;
+             
+             pdf.addImage(imgData, 'PNG', 0, position, componentWidth, componentHeight);
+             heightLeft -= pdfHeight;
+
+             while (heightLeft >= 0) {
+               position = heightLeft - componentHeight;
+               pdf.addPage();
+               pdf.addImage(imgData, 'PNG', 0, position, componentWidth, componentHeight);
+               heightLeft -= pdfHeight;
+             }
+          } else {
+             pdf.addImage(imgData, 'PNG', 0, 0, componentWidth, componentHeight);
+          }
+
+          pdf.save(name);
+      } catch (error) {
+          console.error("PDF generation failed", error);
+          alert("Failed to generate PDF. Falling back to text mode.");
+          // Fallback
+          const doc = new jsPDF();
+          doc.setFontSize(11);
+          doc.text(doc.splitTextToSize(text, 180), 10, 10);
+          doc.save(name);
+      }
   };
 
   const isPremium = (t: TemplateType) => ['Creative', 'Elegant', 'Executive', 'Minimalist', 'Professional'].includes(t);
 
   return (
     <div className="w-full max-w-7xl mx-auto px-2 md:px-6 relative">
+      {/* ... existing invoice modals */}
       {invoiceStatus === 'sending' && (
           <div className="fixed bottom-6 right-6 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-6 py-4 rounded-xl shadow-2xl z-50 animate-in slide-in-from-bottom-10 fade-in duration-300 flex items-center gap-4 border border-slate-200 dark:border-slate-700">
               <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -411,22 +511,23 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
           </div>
       )}
 
-      <div className="sticky top-20 z-40 mb-6 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-1 overflow-x-auto no-scrollbar snap-x">
+      <div className="sticky top-20 z-40 mb-6 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-1">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center flex-shrink-0 gap-2 px-4 py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all snap-start whitespace-nowrap ${
+            className={`flex items-center justify-center flex-1 min-w-0 gap-1.5 px-1.5 py-2 rounded-lg text-[9px] sm:text-[10px] md:text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap overflow-hidden ${
               activeTab === tab.id 
               ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow' 
               : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
-            <tab.icon className="w-3.5 h-3.5" />{tab.name}
+            <tab.icon className="w-3.5 h-3.5 flex-shrink-0" />
+            <span className="truncate">{tab.name}</span>
           </button>
         ))}
-        <div className="flex-grow"></div>
-        <button onClick={onReset} className="ml-auto flex-shrink-0 px-4 py-2 text-[10px] font-bold uppercase text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all">Reset</button>
+        <div className="w-px h-5 bg-slate-200 dark:bg-slate-800 mx-1 flex-shrink-0"></div>
+        <button onClick={onReset} className="flex-shrink-0 px-3 py-2 text-[10px] font-bold uppercase text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all">Reset</button>
       </div>
 
       <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-4 sm:p-6 shadow-2xl border border-slate-100 dark:border-slate-800 min-h-[800px]">
@@ -441,9 +542,14 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
                              <span className="text-xl">🎨</span>
                              <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">Design Gallery</h4>
                         </div>
-                        <button onClick={() => downloadPDF(toolkit.resume, 'resume.pdf')} className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 text-white text-[10px] font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20">
-                            <DownloadIcon className="w-3.5 h-3.5" /> Download PDF
-                        </button>
+                        <div className="flex gap-2">
+                            <button onClick={handleShare} disabled={isSharing} className="flex items-center gap-1.5 px-4 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-[10px] font-bold rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm">
+                                <ShareIcon className="w-3.5 h-3.5" /> {isSharing ? 'Generating...' : 'Share Resume'}
+                            </button>
+                            <button onClick={() => downloadPDF(toolkit.resume, 'resume.pdf')} className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 text-white text-[10px] font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20">
+                                <DownloadIcon className="w-3.5 h-3.5" /> Download PDF
+                            </button>
+                        </div>
                     </div>
                     {/* Grid Layout - Compact */}
                     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-4">
@@ -467,27 +573,28 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                         <div>
                             <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-                                <SearchIcon className="w-5 h-5 text-blue-600" /> ATS Neural Scan
+                                <SearchIcon className="w-5 h-5 text-blue-600" /> ATS Neural Scan & Deep Audit
                             </h3>
-                            <p className="text-xs text-slate-500 font-medium mt-1">Simulate Applicant Tracking System behavior.</p>
+                            <p className="text-xs text-slate-500 font-medium mt-1">Professional-grade analysis against target role requirements.</p>
                         </div>
                         <button onClick={runAnalysis} disabled={isAnalyzing} className="px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-bold rounded-xl hover:opacity-90 transition-all disabled:opacity-50">
-                            {isAnalyzing ? 'Scanning...' : 'Run Analysis'}
+                            {isAnalyzing ? 'Auditing...' : 'Run Deep Audit'}
                         </button>
                     </div>
 
                     {analysis && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in">
                             <div className="bg-white dark:bg-slate-800/50 p-5 rounded-xl border border-slate-200 dark:border-slate-700">
-                                <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Result</h4>
-                                <p className={`text-sm font-bold leading-relaxed ${analysis.score >= 70 ? 'text-green-600' : 'text-amber-500'}`}>{analysis.summary}</p>
+                                <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Audit Summary</h4>
+                                <p className={`text-sm font-bold leading-relaxed ${analysis.score >= 80 ? 'text-green-600' : (analysis.score >= 60 ? 'text-amber-500' : 'text-red-500')}`}>{analysis.summary}</p>
                                 <div className="mt-4 flex items-baseline gap-1">
                                     <div className="text-4xl font-black text-slate-900 dark:text-white">{analysis.score}</div>
                                     <div className="text-[10px] font-bold text-slate-400 uppercase">/ 100</div>
                                 </div>
+                                <p className="text-[10px] text-slate-400 mt-2 italic">Strict evaluation based on provided skills and experience.</p>
                             </div>
                             <div className="bg-red-50 dark:bg-red-900/10 p-5 rounded-xl border border-red-100 dark:border-red-900/30">
-                                <h4 className="text-[9px] font-black text-red-500 uppercase tracking-widest mb-3">Critical Missing Keywords</h4>
+                                <h4 className="text-[9px] font-black text-red-500 uppercase tracking-widest mb-3">Critical Gaps & Missing Keywords</h4>
                                 <div className="space-y-3">
                                     {analysis.missingKeywords.map((k, i) => (
                                         <div key={i} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-red-100 dark:border-red-900/20 shadow-sm hover:shadow-md transition-all group">
@@ -513,7 +620,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
                                                     </svg>
                                                 </div>
                                                 <div className="pl-5">
-                                                    <span className="font-bold text-blue-700 dark:text-blue-300 block mb-0.5 uppercase text-[8px] tracking-widest">Action Plan</span>
+                                                    <span className="font-bold text-blue-700 dark:text-blue-300 block mb-0.5 uppercase text-[8px] tracking-widest">Optimization Strategy</span>
                                                     <span className="text-[10px] font-medium text-slate-700 dark:text-slate-300 italic">"{k.integrationTip}"</span>
                                                 </div>
                                             </div>
@@ -700,42 +807,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
                 </div>
 
                 {toolkit.careerRoadmap && toolkit.careerRoadmap.length > 0 ? (
-                    <div className="space-y-8 relative before:absolute before:inset-0 before:ml-4 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
-                        {toolkit.careerRoadmap.map((step, idx) => {
-                            const isExpanded = expandedRoadmapStep === idx;
-                            return (
-                                <div 
-                                    key={idx} 
-                                    onClick={() => setExpandedRoadmapStep(isExpanded ? null : idx)}
-                                    className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group cursor-pointer"
-                                >
-                                    <div className={`flex items-center justify-center w-8 h-8 rounded-full border border-white bg-slate-200 group-hover:bg-blue-600 group-hover:text-white text-slate-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 transition-all duration-300 z-10 ${isExpanded ? 'bg-blue-600 text-white scale-110' : ''}`}>
-                                        <span className="font-bold text-[10px]">{idx + 1}</span>
-                                    </div>
-                                    <div className={`w-[calc(100%-3rem)] md:w-[calc(50%-2rem)] bg-white dark:bg-slate-950 p-5 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-blue-200 dark:hover:border-blue-900 hover:-translate-y-0.5 ${isExpanded ? 'ring-2 ring-blue-50 dark:ring-blue-900/30' : ''}`}>
-                                        <div className="flex items-center justify-between space-x-2">
-                                            <div className="flex flex-col">
-                                                <div className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">{step.title}</div>
-                                                <time className="font-mono italic text-slate-400 text-[10px]">{step.phase || step.duration}</time>
-                                            </div>
-                                            <ChevronDownIcon className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${isExpanded ? 'rotate-180 text-blue-500' : ''}`} />
-                                        </div>
-                                        
-                                        <div className={`grid transition-all duration-300 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100 mt-4' : 'grid-rows-[0fr] opacity-0'}`}>
-                                            <div className="overflow-hidden">
-                                                <div className="text-slate-500 text-xs mb-3 leading-relaxed border-t border-slate-50 dark:border-slate-800 pt-3">{step.description}</div>
-                                                <div className="flex flex-wrap gap-1.5">
-                                                    {step.milestones?.map((m, mi) => (
-                                                        <span key={mi} className="px-2 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-[9px] font-bold rounded uppercase tracking-wider">{m}</span>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                    <RoadmapVisualizer steps={toolkit.careerRoadmap} />
                 ) : <p className="text-center text-slate-500 text-sm">No roadmap generated.</p>}
             </div>
         )}

@@ -38,7 +38,7 @@ const InputField: React.FC<{
           name={id}
           id={id}
           autoFocus={autoFocus}
-          className={`block w-full rounded-xl border-2 border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm focus:border-blue-500 focus:ring-0 sm:text-sm p-3 transition-all hover:border-slate-200 dark:hover:border-slate-700 placeholder:text-slate-300 dark:placeholder:text-slate-600 font-medium ${rightElement ? 'pr-14' : ''}`}
+          className={`form-input block w-full rounded-xl border-2 border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm focus:border-blue-500 focus:ring-0 sm:text-sm p-3 transition-all hover:border-slate-200 dark:hover:border-slate-700 placeholder:text-slate-300 dark:placeholder:text-slate-600 font-medium ${rightElement ? 'pr-14' : ''}`}
           placeholder={placeholder}
           value={value}
           onChange={onChange}
@@ -49,6 +49,12 @@ const InputField: React.FC<{
                 {rightElement}
             </div>
         )}
+        <style>{`
+            .form-input::placeholder {
+                font-style: italic;
+                opacity: 0.7;
+            }
+        `}</style>
     </div>
   </div>
 );
@@ -293,7 +299,25 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading }) => {
       setErrorMsg(null);
   };
 
-  const handleClear = () => { if(confirm("Clear progress?")) { localStorage.clear(); window.location.reload(); } };
+  const handleClear = (e: React.MouseEvent) => { 
+      e.preventDefault();
+      if(confirm("Start Fresh? This will permanently delete all entered data and reset the application.")) { 
+          localStorage.removeItem(STORAGE_KEY_DATA);
+          localStorage.removeItem(STORAGE_KEY_STEP);
+          
+          // Reset state to ensure clean slate before reload
+          setFormData({
+              fullName: '', email: '', phone: '', linkedinGithub: '', careerObjective: '',
+              education: '', school12th: '', school10th: '',
+              skills: '', projects: '', projectsList: [], internships: '', eventsAndCertifications: '', yearsOfExperience: '', certifications: '',
+              jobRoleTarget: '', company: '', whyThisRole: '', interests: '', currentYear: '',
+              projectLink: '', projectStartDate: '', projectEndDate: '', customCSS: ''
+          });
+          setCurrentStep(1);
+          
+          window.location.reload();
+      } 
+  };
 
   const handleImport = async () => {
       if (!importText.trim()) return;
@@ -357,8 +381,10 @@ const InputForm: React.FC<InputFormProps> = ({ onSubmit, isLoading }) => {
             <div className="flex flex-col items-end gap-2">
                 <button onClick={() => setShowImportModal(true)} className="px-5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:opacity-90 shadow-lg">📥 Import Profile</button>
                 <div className="flex gap-2">
-                    <button onClick={handleMagicFill} className="text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400 hover:underline">✨ Magic Fill</button>
-                    <button onClick={handleClear} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-red-500 transition-colors">Clear</button>
+                    <button type="button" onClick={handleMagicFill} className="text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400 hover:underline">✨ Magic Fill</button>
+                    <button type="button" onClick={handleClear} className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-red-600 bg-slate-100 dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all" title="Reset Form">
+                        <span>🗑️</span> Clear
+                    </button>
                 </div>
                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Step {currentStep} of {STEPS.length}</div>
             </div>

@@ -3,6 +3,7 @@ import { UserInput, JobToolkit } from './types';
 import { generateJobToolkit } from './services/geminiService';
 import InputForm from './components/InputForm';
 import ResultsDisplay from './components/ResultsDisplay';
+import { SharedResumeView } from './components/SharedResumeView';
 import { LogoIcon } from './components/icons/LogoIcon';
 
 const SunIcon = () => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" /></svg>;
@@ -124,6 +125,14 @@ const App: React.FC = () => {
   const [errorDetails, setErrorDetails] = useState<{title: string, desc: string, tip: string} | null>(null);
   const [isDark, setIsDark] = useState(document.documentElement.classList.contains('dark'));
   const [showAbout, setShowAbout] = useState(false);
+  const [isSharedView, setIsSharedView] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('shareData')) {
+        setIsSharedView(true);
+    }
+  }, []);
 
   const toggleTheme = () => {
     const isNowDark = !isDark;
@@ -150,6 +159,10 @@ const App: React.FC = () => {
   };
 
   const handleUpdate = (u: Partial<JobToolkit>) => setToolkit(prev => prev ? ({ ...prev, ...u }) : null);
+
+  if (isSharedView) {
+      return <SharedResumeView />;
+  }
 
   return (
     <div className="min-h-screen bg-[#FDFDFD] dark:bg-[#020617] text-slate-800 dark:text-slate-200 transition-colors duration-500 overflow-x-hidden">
