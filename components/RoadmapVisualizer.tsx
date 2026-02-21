@@ -84,6 +84,8 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({ steps }) =
         <div className="space-y-8 relative">
           {steps.map((step, index) => {
             const isExpanded = expandedSteps.includes(index) || isDownloading;
+            const isLast = index === steps.length - 1;
+            
             return (
               <motion.div
                 key={index}
@@ -93,11 +95,11 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({ steps }) =
                 className="relative flex gap-6 md:gap-10 group"
               >
                 {/* Node with Pulse Effect */}
-                <div className="relative z-10 shrink-0 mt-1">
-                    {isExpanded && <div className="absolute inset-0 bg-blue-500/30 rounded-full animate-ping" />}
+                <div className="relative z-10 shrink-0 mt-1 flex flex-col items-center">
+                    {isExpanded && <div className="absolute top-1 w-full h-full bg-blue-500/30 rounded-full animate-ping" style={{ width: '2rem', height: '2rem' }} />}
                     <button
                     onClick={() => !isDownloading && toggleStep(index)}
-                    className={`relative flex items-center justify-center w-6 h-6 md:w-8 md:h-8 rounded-full border-2 transition-all duration-300 ${
+                    className={`relative flex items-center justify-center w-6 h-6 md:w-8 md:h-8 rounded-full border-2 transition-all duration-300 z-20 ${
                         isExpanded
                         ? 'bg-blue-600 border-blue-600 text-white scale-110 shadow-lg shadow-blue-600/30'
                         : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-500 hover:border-blue-500 hover:text-blue-500'
@@ -105,6 +107,9 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({ steps }) =
                     >
                     <span className="text-[10px] font-bold">{index + 1}</span>
                     </button>
+                    {!isLast && (
+                        <div className={`w-0.5 flex-grow mt-2 ${isExpanded ? 'bg-blue-200 dark:bg-blue-800' : 'bg-transparent'}`} style={{ height: '100%' }}></div>
+                    )}
                 </div>
 
                 {/* Content Card */}
@@ -187,6 +192,7 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({ steps }) =
                                                     onClick={(e) => {
                                                         if (isPremium) {
                                                             e.preventDefault();
+                                                            e.stopPropagation(); // Stop propagation to prevent collapsing card
                                                             // Custom Interactive Alert
                                                             const overlay = document.createElement('div');
                                                             overlay.className = 'fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200';
@@ -225,6 +231,8 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({ steps }) =
                                                                 if(mainUpgradeBtn) mainUpgradeBtn.click();
                                                                 else alert("Redirecting to payment gateway...");
                                                             });
+                                                        } else {
+                                                            e.stopPropagation(); // Stop propagation for non-premium links too
                                                         }
                                                     }}
                                                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all duration-200 ${

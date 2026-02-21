@@ -67,6 +67,7 @@ export const generateJobToolkit = async (input: UserInput): Promise<JobToolkit> 
        - Integrate high-impact keywords for ATS optimization for this specific role.
        - Align the professional summary with ${input.company}'s values.
     4. INTERVIEW PREP:
+       - Generate 10 GENERAL interview questions relevant to the role of "${input.jobRoleTarget}".
        - If the user lists multiple target companies (e.g., "Google, Amazon"), generate a separate set of 10 questions for EACH company.
        - For each company, tailor the questions to their specific interview style (e.g., Google: Algorithms/System Design; Amazon: Leadership Principles; Startups: Culture/Agility).
        - Include a mix of:
@@ -91,7 +92,7 @@ export const generateJobToolkit = async (input: UserInput): Promise<JobToolkit> 
       "mockInterview": {
         "questions": [
           { 
-            "question": "Interview question", 
+            "question": "Interview question (10 General Questions)", 
             "context": "Why this is asked (e.g., Technical, Behavioral)", 
             "feedback": "Key talking points and strategy" 
           }
@@ -100,7 +101,7 @@ export const generateJobToolkit = async (input: UserInput): Promise<JobToolkit> 
             {
                 "company": "Company Name",
                 "questions": [
-                    { "question": "...", "context": "...", "feedback": "..." }
+                    { "question": "Interview question (10 Company Specific Questions)", "context": "...", "feedback": "..." }
                 ]
             }
         ]

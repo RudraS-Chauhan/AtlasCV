@@ -358,6 +358,16 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
             setIsPro(true); 
             generateAndSendInvoice(response.razorpay_payment_id || "TXN_PENDING");
           },
+          modal: {
+              ondismiss: () => {
+                  if (confirm("Payment incomplete. Activate Demo Mode to preview Elite Tools?")) {
+                      localStorage.setItem('jobHero_pro', 'true');
+                      localStorage.setItem('jobHero_pro_expiry', expiryTime.toString());
+                      setIsPro(true);
+                      generateAndSendInvoice("DEMO_TXN_" + Date.now());
+                  }
+              }
+          },
           prefill: { name: userInput.fullName, email: userInput.email }, theme: { color: "#2563EB" }
       };
       try { const rzp1 = new window.Razorpay(options); rzp1.open(); } catch (e) { alert("Razorpay SDK Error"); }
@@ -484,7 +494,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
             document.body.appendChild(clone);
 
             const canvas = await html2canvas(clone, {
-                scale: 2, // Higher quality
+                scale: 3, // Higher quality (300 DPI equivalent)
                 useCORS: true,
                 logging: false,
                 backgroundColor: '#ffffff',
@@ -583,7 +593,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
                                 <ShareIcon className="w-3.5 h-3.5" /> {isSharing ? 'Generating...' : 'Share Resume'}
                             </button>
                             <button onClick={() => downloadPDF('resume-preview-container', 'resume.pdf')} className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 text-white text-[10px] font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20">
-                                <DownloadIcon className="w-3.5 h-3.5" /> Download PDF
+                                <DownloadIcon className="w-3.5 h-3.5" /> Download Resume as PDF
                             </button>
                         </div>
                     </div>
@@ -633,7 +643,9 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
             <div className="animate-in fade-in space-y-6">
                 <div className="flex justify-between items-center">
                     <h3 className="text-xl font-black">Cover Letter</h3>
-                    <button onClick={() => downloadPDF('cover-letter-preview', 'cover_letter.pdf')} className="p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl hover:bg-slate-200 transition-colors"><DownloadIcon className="w-4 h-4"/></button>
+                    <button onClick={() => downloadPDF('cover-letter-preview', 'cover_letter.pdf')} className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 text-white text-[10px] font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20">
+                        <DownloadIcon className="w-3.5 h-3.5" /> Download Cover Letter as PDF
+                    </button>
                 </div>
                 <div id="cover-letter-preview" className="w-full h-[600px] p-8 bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-serif leading-7 text-slate-700 dark:text-slate-300 shadow-inner overflow-auto whitespace-pre-wrap">
                     {toolkit.coverLetter || "Generating cover letter..."}
@@ -680,7 +692,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
                                 onChange={(e) => setSelectedCompanyIndex(e.target.value === 'default' ? 'default' : parseInt(e.target.value))}
                                 value={selectedCompanyIndex}
                             >
-                                <option value="default">General / {userInput.company.split(',')[0]}</option>
+                                <option value="default">General Interview Questions</option>
                                 {toolkit.mockInterview.companySpecific.map((c, i) => (
                                     <option key={i} value={i}>{c.company}</option>
                                 ))}
@@ -838,6 +850,25 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
                 {toolkit.careerRoadmap && toolkit.careerRoadmap.length > 0 ? (
                     <RoadmapVisualizer steps={toolkit.careerRoadmap} />
                 ) : <p className="text-center text-slate-500 text-sm">No roadmap generated.</p>}
+
+                {/* Elite Suite Footer for Roadmap */}
+                <div className="p-6 bg-slate-900 rounded-2xl text-white relative overflow-hidden shadow-lg mt-8">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/20 rounded-full blur-2xl -mr-10 -mt-10"></div>
+                    <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
+                        <div>
+                            <h3 className="text-xl font-black mb-1 flex items-center gap-2 justify-center md:justify-start"><span className="text-amber-400">⚡</span> Elite Suite</h3>
+                            <p className="text-slate-400 text-xs font-medium">Unlock recruiter insights & negotiation scripts.</p>
+                        </div>
+                        {!isPro ? (
+                            <button onClick={handlePayment} className="px-6 py-2.5 bg-amber-500 text-slate-900 text-xs font-black rounded-xl hover:bg-amber-400 transition-all whitespace-nowrap">Unlock (₹25)</button>
+                        ) : (
+                            <div className="flex flex-col items-end">
+                                <div className="px-4 py-1.5 bg-green-500/20 text-green-400 text-xs font-bold rounded-full border border-green-500/50 flex items-center gap-2"><CheckIcon className="w-3 h-3"/> Active</div>
+                                {timeLeft && <span className="text-[10px] font-mono text-slate-400 mt-1">Exp: {timeLeft}</span>}
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
         )}
 
@@ -849,6 +880,18 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
                         <h2 className="text-2xl font-black text-slate-900 dark:text-white">Elite Strategy Suite</h2>
                         <p className="text-slate-500 text-sm">Unlock recruiter psychology insights, salary negotiation scripts, cold email templates, and custom networking strategies used by top 1% candidates.</p>
                         <button onClick={handlePayment} className="px-8 py-3 bg-blue-600 text-white font-black text-sm rounded-xl shadow-lg hover:scale-105 transition-all">Unlock Full System (₹25)</button>
+                        <div className="mt-4">
+                            <button onClick={() => {
+                                if(confirm("Activate Demo Mode for testing?")) {
+                                    localStorage.setItem('jobHero_pro', 'true');
+                                    localStorage.setItem('jobHero_pro_expiry', (Date.now() + 24 * 60 * 60 * 1000).toString());
+                                    setIsPro(true);
+                                    generateAndSendInvoice("DEMO_TXN_" + Date.now());
+                                }
+                            }} className="text-[10px] text-slate-400 underline hover:text-blue-500">
+                                Demo Unlock (No Charge)
+                            </button>
+                        </div>
                     </div>
                 ) : (
                     <div className="text-left space-y-8 animate-in fade-in">
