@@ -16,14 +16,29 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({ steps }) =
   const handleDownload = async () => {
     if (!containerRef.current) return;
     setIsDownloading(true);
+    
+    // Allow time for re-render to expand all items
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     try {
+      // Add a temporary class for better capture styling
+      containerRef.current.classList.add('capturing');
+      
       const canvas = await html2canvas(containerRef.current, {
         scale: 2,
         backgroundColor: '#ffffff',
         useCORS: true,
+        logging: false,
+        onclone: (doc) => {
+            const el = doc.querySelector('.capturing');
+            if (el) (el as HTMLElement).style.padding = '40px';
+        }
       });
+      
+      containerRef.current.classList.remove('capturing');
+
       const link = document.createElement('a');
-      link.download = 'career-roadmap.png';
+      link.download = `Career_Roadmap_${new Date().toISOString().split('T')[0]}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
     } catch (error) {
@@ -44,17 +59,17 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({ steps }) =
           className="flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-bold uppercase tracking-wider rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           <DownloadIcon className="w-4 h-4" />
-          {isDownloading ? 'Capturing...' : 'Download Map'}
+          {isDownloading ? 'Generating High-Res Map...' : 'Download Map'}
         </button>
       </div>
 
       <div ref={containerRef} className="relative pl-4 md:pl-8 py-4 bg-white dark:bg-slate-950 rounded-xl">
-        {/* Vertical Line */}
-        <div className="absolute left-[27px] md:left-[43px] top-6 bottom-6 w-0.5 bg-slate-200 dark:bg-slate-800" />
+        {/* Vertical Line with Gradient */}
+        <div className="absolute left-[27px] md:left-[43px] top-6 bottom-6 w-0.5 bg-gradient-to-b from-blue-200 via-purple-200 to-blue-200 dark:from-blue-900 dark:via-purple-900 dark:to-blue-900" />
 
         <div className="space-y-8 relative">
           {steps.map((step, index) => {
-            const isExpanded = expandedStep === index;
+            const isExpanded = expandedStep === index || isDownloading;
             return (
               <motion.div
                 key={index}
@@ -63,17 +78,20 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({ steps }) =
                 transition={{ delay: index * 0.1 }}
                 className="relative flex gap-6 md:gap-10 group"
               >
-                {/* Node */}
-                <button
-                  onClick={() => setExpandedStep(isExpanded ? null : index)}
-                  className={`relative z-10 flex items-center justify-center w-6 h-6 md:w-8 md:h-8 rounded-full border-2 transition-all duration-300 shrink-0 mt-1 ${
-                    isExpanded
-                      ? 'bg-blue-600 border-blue-600 text-white scale-110 shadow-lg shadow-blue-600/30'
-                      : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-500 hover:border-blue-500 hover:text-blue-500'
-                  }`}
-                >
-                  <span className="text-[10px] font-bold">{index + 1}</span>
-                </button>
+                {/* Node with Pulse Effect */}
+                <div className="relative z-10 shrink-0 mt-1">
+                    {isExpanded && <div className="absolute inset-0 bg-blue-500/30 rounded-full animate-ping" />}
+                    <button
+                    onClick={() => setExpandedStep(isExpanded && !isDownloading ? null : index)}
+                    className={`relative flex items-center justify-center w-6 h-6 md:w-8 md:h-8 rounded-full border-2 transition-all duration-300 ${
+                        isExpanded
+                        ? 'bg-blue-600 border-blue-600 text-white scale-110 shadow-lg shadow-blue-600/30'
+                        : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-500 hover:border-blue-500 hover:text-blue-500'
+                    }`}
+                    >
+                    <span className="text-[10px] font-bold">{index + 1}</span>
+                    </button>
+                </div>
 
                 {/* Content Card */}
                 <div
@@ -82,7 +100,7 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({ steps }) =
                   }`}
                 >
                   <div
-                    onClick={() => setExpandedStep(isExpanded ? null : index)}
+                    onClick={() => setExpandedStep(isExpanded && !isDownloading ? null : index)}
                     className={`cursor-pointer p-5 rounded-xl border transition-all duration-300 ${
                       isExpanded
                         ? 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800 shadow-md'
@@ -142,29 +160,73 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({ steps }) =
                                 <div className="md:col-span-2">
                                     <h5 className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Resources</h5>
                                     <div className="flex flex-wrap gap-2">
-                                        {step.resources.map((res, i) => (
-                                            <a 
-                                                key={i} 
-                                                href={res.type === 'Premium' ? '#' : `https://www.google.com/search?q=${encodeURIComponent(res.title)}`}
-                                                target={res.type === 'Premium' ? '_self' : '_blank'}
-                                                rel="noopener noreferrer"
-                                                onClick={(e) => {
-                                                    if (res.type === 'Premium') {
-                                                        e.preventDefault();
-                                                        alert("🔒 Premium Resource: This content requires an upgrade to access.");
-                                                    }
-                                                }}
-                                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors ${
-                                                    res.type === 'Premium' 
-                                                    ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40 cursor-pointer' 
-                                                    : 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40'
-                                                }`}
-                                            >
-                                                <span>{res.type === 'Premium' ? '🔒' : '📚'}</span> 
-                                                {res.title} 
-                                                <span className="opacity-50 font-normal">({res.type})</span>
-                                            </a>
-                                        ))}
+                                        {step.resources.map((res, i) => {
+                                            const isPremium = res.type === 'Premium';
+                                            const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(res.title)}`;
+                                            
+                                            return (
+                                                <a 
+                                                    key={i} 
+                                                    href={isPremium ? undefined : searchUrl}
+                                                    target={isPremium ? undefined : '_blank'}
+                                                    rel={isPremium ? undefined : "noopener noreferrer"}
+                                                    onClick={(e) => {
+                                                        if (isPremium) {
+                                                            e.preventDefault();
+                                                            // Custom Interactive Alert
+                                                            const overlay = document.createElement('div');
+                                                            overlay.className = 'fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200';
+                                                            overlay.innerHTML = `
+                                                                <div class="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 dark:border-slate-800 transform scale-100 animate-in zoom-in-95 duration-200 relative overflow-hidden">
+                                                                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-400 to-orange-600"></div>
+                                                                    <div class="text-center space-y-4">
+                                                                        <div class="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-2">
+                                                                            <span class="text-3xl">💎</span>
+                                                                        </div>
+                                                                        <h3 class="text-2xl font-black text-slate-900 dark:text-white">Unlock Elite Strategy</h3>
+                                                                        <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                                                                            You've discovered a <strong>Premium Resource</strong>. This includes:
+                                                                        </p>
+                                                                        <ul class="text-left text-xs font-medium text-slate-700 dark:text-slate-300 space-y-2 bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                                                                            <li class="flex items-center gap-2">✅ Interactive Learning Flowchart</li>
+                                                                            <li class="flex items-center gap-2">✅ Deep-Dive Implementation Guide</li>
+                                                                            <li class="flex items-center gap-2">✅ Expert-Vetted Best Practices</li>
+                                                                        </ul>
+                                                                        <div class="flex gap-3 pt-2">
+                                                                            <button id="cancel-upgrade" class="flex-1 px-4 py-3 text-xs font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors">Maybe Later</button>
+                                                                            <button id="confirm-upgrade" class="flex-1 px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-lg hover:shadow-amber-500/25 hover:scale-105 transition-all">🚀 Upgrade Now</button>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            `;
+                                                            document.body.appendChild(overlay);
+                                                            
+                                                            document.getElementById('cancel-upgrade')?.addEventListener('click', () => {
+                                                                overlay.remove();
+                                                            });
+                                                            
+                                                            document.getElementById('confirm-upgrade')?.addEventListener('click', () => {
+                                                                overlay.remove();
+                                                                // Trigger the actual upgrade flow here
+                                                                // For now, we can simulate a click on the main "Upgrade" button if it exists, or just log it.
+                                                                const mainUpgradeBtn = document.querySelector('button[class*="bg-gradient-to-r from-amber-500"]') as HTMLButtonElement;
+                                                                if(mainUpgradeBtn) mainUpgradeBtn.click();
+                                                                else alert("Redirecting to payment gateway...");
+                                                            });
+                                                        }
+                                                    }}
+                                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all duration-200 ${
+                                                        isPremium 
+                                                        ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40 cursor-pointer border border-amber-200 dark:border-amber-800/50 hover:shadow-md hover:shadow-amber-500/10 hover:-translate-y-0.5' 
+                                                        : 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 border border-blue-200 dark:border-blue-800/50 hover:shadow-sm hover:-translate-y-0.5'
+                                                    }`}
+                                                >
+                                                    <span>{isPremium ? '💎' : (res.type === 'Tool' ? '🛠️' : '📚')}</span> 
+                                                    <span className={isPremium ? 'underline decoration-amber-300/50 underline-offset-2' : 'hover:underline'}>{res.title}</span>
+                                                    {isPremium && <span className="ml-1 text-[8px] bg-gradient-to-r from-amber-500 to-orange-500 text-white px-1.5 py-0.5 rounded-full font-black tracking-wider shadow-sm">PRO</span>}
+                                                </a>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             )}

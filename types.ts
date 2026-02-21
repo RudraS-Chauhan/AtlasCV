@@ -37,6 +37,13 @@ export interface UserInput {
   school12th: string;
   school10th: string;
   
+  // Advanced Education
+  previousDegree?: string;
+  previousDegreeScore?: string;
+  
+  // Miscellaneous
+  otherInfo?: string;
+  
   // Legacy fields kept for compatibility if needed
   projectLink: string;
   projectStartDate: string;
@@ -54,6 +61,12 @@ export interface RoadmapStep {
   resources: { title: string; type: 'Course' | 'Book' | 'Tool' }[];
 }
 
+export interface InterviewQuestion {
+    question: string;
+    context: string;
+    feedback: string;
+}
+
 export interface JobToolkit {
   resume: string;
   coverLetter: string;
@@ -62,16 +75,39 @@ export interface JobToolkit {
     bio: string;
   };
   mockInterview: {
-    questions: {
-      question: string;
-      context: string; // Why this question is asked
-      feedback: string; // Key talking points / Ideal answer structure
+    questions: InterviewQuestion[];
+    companySpecific?: {
+        company: string;
+        questions: InterviewQuestion[];
     }[];
   };
   careerRoadmap: RoadmapStep[];
   // Premium
   recruiterPsychology?: string;
   salaryNegotiation?: string;
+  coldEmails?: {
+      hiringManager: string;
+      peerNetworking: string;
+      valueProposition: string;
+  };
+  elevatorPitch?: string;
+  plan90Day?: string;
+  linkedinConnection?: string;
+  competitorAnalysis?: string;
+  
+  // New Elite Tools
+  booleanSearchStrings?: {
+      hiringManagers: string;
+      recruiters: string;
+      peers: string;
+  };
+  networkingScripts?: {
+      connectionFollowUp: string;
+      informationalInterview: string;
+      reEngagement: string;
+  };
+  personalBrandAudit?: string;
+  technicalChallenge?: string;
 }
 
 export interface KeywordInsight {
@@ -98,8 +134,12 @@ export interface ResumeVersion {
 
 export interface InterviewFeedback {
     rating: number;
+    clarityScore: number;
+    relevanceScore: number;
+    deliveryScore: number;
     clarity: string;
     relevance: string;
+    delivery: string;
     missingPoints: string[];
     sampleAnswer: string;
 }

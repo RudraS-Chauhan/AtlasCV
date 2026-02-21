@@ -54,7 +54,12 @@ export const SharedResumeView: React.FC = () => {
             shareUrl = `https://twitter.com/intent/tweet?url=${url}&text=${text}`;
         }
         
-        window.open(shareUrl, '_blank', 'width=600,height=400');
+        const width = 600;
+        const height = 400;
+        const left = window.screen.width / 2 - width / 2;
+        const top = window.screen.height / 2 - height / 2;
+        
+        window.open(shareUrl, '_blank', `width=${width},height=${height},left=${left},top=${top},noopener,noreferrer`);
     };
 
     const handleCopyLink = () => {

@@ -224,6 +224,16 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
   const [analyzingAnswer, setAnalyzingAnswer] = useState<number | null>(null);
   const [isSharing, setIsSharing] = useState(false);
 
+  const [selectedCompanyIndex, setSelectedCompanyIndex] = useState<number | 'default'>('default');
+  
+  // Helper to get current questions
+  const getCurrentQuestions = () => {
+      if (selectedCompanyIndex === 'default' || !toolkit.mockInterview?.companySpecific) {
+          return toolkit.mockInterview?.questions || [];
+      }
+      return toolkit.mockInterview.companySpecific[selectedCompanyIndex]?.questions || [];
+  };
+
   useEffect(() => {
     if (!isPro) {
         setTimeLeft('');
@@ -445,24 +455,25 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
   const downloadPDF = async (text: string, name: string) => {
       const element = document.getElementById('resume-preview-container');
       if (!element) {
-          // Fallback to text if element not found
-          const doc = new jsPDF();
-          doc.setFontSize(11);
-          doc.text(doc.splitTextToSize(text, 180), 10, 10);
-          doc.save(name);
+          alert("Preview not found. Please try again.");
           return;
       }
 
       try {
+          // Wait for fonts to load
+          await document.fonts.ready;
+
           // Use html2canvas to capture the visual design
           const canvas = await html2canvas(element, {
-              scale: 2, // Higher scale for better quality
+              scale: 3, // Higher scale for better quality (300 DPI equivalent)
               useCORS: true,
               logging: false,
-              backgroundColor: '#ffffff'
+              backgroundColor: '#ffffff',
+              letterRendering: true, // Improve font rendering
+              allowTaint: true,
           });
 
-          const imgData = canvas.toDataURL('image/png');
+          const imgData = canvas.toDataURL('image/png', 1.0); // Max quality
           const pdf = new jsPDF('p', 'mm', 'a4');
           const pdfWidth = pdf.internal.pageSize.getWidth();
           const pdfHeight = pdf.internal.pageSize.getHeight();
@@ -470,47 +481,29 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
           const imgHeight = canvas.height;
           const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
           const imgX = (pdfWidth - imgWidth * ratio) / 2;
-          const imgY = 0; // Top align
-
-          // Calculate height in PDF units
-          const imgHeightInPdf = imgHeight * ratio;
-          
-          // If content is longer than one page, we might need multi-page logic, 
-          // but for now, let's fit to width and allow it to be a single long image or scale to fit.
-          // A simple "scale to fit width" is usually best for resumes unless they are strictly multi-page.
-          // Given the preview is often a single view, we'll scale to fit width.
           
           const componentWidth = pdfWidth;
           const componentHeight = (imgHeight * pdfWidth) / imgWidth;
 
-          // If height exceeds A4, we might need to split, but for this "snapshot" approach:
-          if (componentHeight > pdfHeight) {
-             // Multi-page approach (basic)
-             let heightLeft = componentHeight;
-             let position = 0;
-             
-             pdf.addImage(imgData, 'PNG', 0, position, componentWidth, componentHeight);
-             heightLeft -= pdfHeight;
+          // Multi-page logic
+          let heightLeft = componentHeight;
+          let position = 0;
+          
+          pdf.addImage(imgData, 'PNG', 0, position, componentWidth, componentHeight);
+          heightLeft -= pdfHeight;
 
-             while (heightLeft >= 0) {
-               position = heightLeft - componentHeight;
-               pdf.addPage();
-               pdf.addImage(imgData, 'PNG', 0, position, componentWidth, componentHeight);
-               heightLeft -= pdfHeight;
-             }
-          } else {
-             pdf.addImage(imgData, 'PNG', 0, 0, componentWidth, componentHeight);
+          while (heightLeft > 0) {
+            position = heightLeft - componentHeight; // This logic for multi-page is tricky with images
+            // Better approach for long resumes: Add new page and draw remaining part
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, -pdfHeight + (componentHeight - heightLeft), componentWidth, componentHeight); // Shift image up
+            heightLeft -= pdfHeight;
           }
 
           pdf.save(name);
       } catch (error) {
           console.error("PDF generation failed", error);
-          alert("Failed to generate PDF. Falling back to text mode.");
-          // Fallback
-          const doc = new jsPDF();
-          doc.setFontSize(11);
-          doc.text(doc.splitTextToSize(text, 180), 10, 10);
-          doc.save(name);
+          alert("High-quality PDF generation failed. Please try again or use a different browser.");
       }
   };
 
@@ -519,6 +512,20 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
   return (
     <div className="w-full max-w-7xl mx-auto px-2 md:px-6 relative">
       {/* ... existing invoice modals */}
+      {/* Elite Session Timer - Fixed Corner */}
+      {isPro && timeLeft && (
+          <div className="fixed bottom-6 left-6 z-50 bg-slate-900 dark:bg-slate-800 text-white px-4 py-3 rounded-xl shadow-2xl border border-slate-700 flex items-center gap-3 animate-in slide-in-from-left-10 fade-in duration-500">
+              <div className="relative flex items-center justify-center w-10 h-10 bg-slate-800 rounded-full border border-slate-600">
+                  <div className="absolute top-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-slate-800 rounded-full animate-pulse"></div>
+                  <span className="text-lg">⚡</span>
+              </div>
+              <div>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Elite Session</p>
+                  <p className="text-sm font-mono font-bold text-white tabular-nums tracking-wide">{timeLeft}</p>
+              </div>
+          </div>
+      )}
+
       {invoiceStatus === 'sending' && (
           <div className="fixed bottom-6 right-6 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-6 py-4 rounded-xl shadow-2xl z-50 animate-in slide-in-from-bottom-10 fade-in duration-300 flex items-center gap-4 border border-slate-200 dark:border-slate-700">
               <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -662,9 +669,26 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
                 <div className="bg-slate-50 dark:bg-slate-900 p-6 rounded-2xl text-center mb-4">
                     <h3 className="text-xl font-black mb-1">Interview Prep</h3>
                     <p className="text-xs text-slate-500">Role: <span className="text-blue-600 font-bold">{userInput.jobRoleTarget}</span></p>
+                    
+                    {/* Company Selector */}
+                    {toolkit.mockInterview?.companySpecific && toolkit.mockInterview.companySpecific.length > 0 && (
+                        <div className="mt-4 flex justify-center">
+                            <select 
+                                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs font-bold rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-sm"
+                                onChange={(e) => setSelectedCompanyIndex(e.target.value === 'default' ? 'default' : parseInt(e.target.value))}
+                                value={selectedCompanyIndex}
+                            >
+                                <option value="default">General / {userInput.company.split(',')[0]}</option>
+                                {toolkit.mockInterview.companySpecific.map((c, i) => (
+                                    <option key={i} value={i}>{c.company}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
                 </div>
+                
                 <div className="grid grid-cols-1 gap-4">
-                    {toolkit.mockInterview?.questions && toolkit.mockInterview.questions.length > 0 ? toolkit.mockInterview.questions.map((q, i) => (
+                    {getCurrentQuestions().length > 0 ? getCurrentQuestions().map((q, i) => (
                         <div key={i} className="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
                             <div className="flex gap-3 mb-3">
                                 <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0">Q{i+1}</div>
@@ -703,14 +727,21 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
                                             </div>
                                         </div>
                                         
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-                                            <div>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                                            <div className="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 text-center">
                                                 <h5 className="text-[9px] font-bold uppercase text-slate-500 mb-1">Clarity</h5>
-                                                <p className="text-xs text-slate-700 dark:text-slate-300">{feedback[i]!.clarity}</p>
+                                                <div className="text-lg font-black text-blue-600 dark:text-blue-400">{feedback[i]!.clarityScore}/10</div>
+                                                <p className="text-[10px] text-slate-600 dark:text-slate-400 mt-1 leading-tight">{feedback[i]!.clarity}</p>
                                             </div>
-                                            <div>
+                                            <div className="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 text-center">
                                                 <h5 className="text-[9px] font-bold uppercase text-slate-500 mb-1">Relevance</h5>
-                                                <p className="text-xs text-slate-700 dark:text-slate-300">{feedback[i]!.relevance}</p>
+                                                <div className="text-lg font-black text-purple-600 dark:text-purple-400">{feedback[i]!.relevanceScore}/10</div>
+                                                <p className="text-[10px] text-slate-600 dark:text-slate-400 mt-1 leading-tight">{feedback[i]!.relevance}</p>
+                                            </div>
+                                            <div className="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800 text-center">
+                                                <h5 className="text-[9px] font-bold uppercase text-slate-500 mb-1">Delivery</h5>
+                                                <div className="text-lg font-black text-emerald-600 dark:text-emerald-400">{feedback[i]!.deliveryScore}/10</div>
+                                                <p className="text-[10px] text-slate-600 dark:text-slate-400 mt-1 leading-tight">{feedback[i]!.delivery}</p>
                                             </div>
                                         </div>
 
@@ -725,15 +756,45 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
                                             </div>
                                         )}
 
-                                        <div className="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
-                                            <h5 className="text-[9px] font-bold uppercase text-green-600 mb-1">Ideal Sample Answer</h5>
-                                            <p className="text-xs text-slate-600 dark:text-slate-400 italic">"{feedback[i]!.sampleAnswer}"</p>
+                                        <div className="bg-white dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-800 relative overflow-hidden group">
+                                            <div className="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
+                                            <h5 className="text-[9px] font-bold uppercase text-green-600 mb-2 flex items-center gap-2">
+                                                <span>✨</span> 10/10 Sample Answer
+                                            </h5>
+                                            <p className="text-xs text-slate-700 dark:text-slate-300 italic leading-relaxed">"{feedback[i]!.sampleAnswer}"</p>
                                         </div>
                                     </div>
                                 )}
                             </div>
                         </div>
                     )) : <p className="text-center text-slate-500 text-sm">No interview questions generated.</p>}
+                    
+                    {/* Premium Exact Answers Tile */}
+                    <div className="mt-8 p-1 bg-gradient-to-r from-amber-200 via-orange-300 to-amber-200 rounded-2xl shadow-xl">
+                        <div className="bg-white dark:bg-slate-900 p-8 rounded-xl text-center relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
+                            <div className="relative z-10">
+                                <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl shadow-sm">
+                                    🔑
+                                </div>
+                                <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Unlock "The Perfect Script"</h3>
+                                <p className="text-sm text-slate-600 dark:text-slate-400 mb-6 max-w-lg mx-auto">
+                                    Get exact, word-for-word answers for every question above, tailored specifically to <strong>{userInput.company}</strong>'s culture and your unique background.
+                                </p>
+                                <button 
+                                    onClick={handlePayment}
+                                    disabled={isPro}
+                                    className={`px-8 py-3 font-black text-sm rounded-xl shadow-lg transition-all transform hover:scale-105 ${
+                                        isPro 
+                                        ? 'bg-green-100 text-green-700 cursor-default' 
+                                        : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:shadow-amber-500/25'
+                                    }`}
+                                >
+                                    {isPro ? '✅ Premium Access Active' : 'Unlock Exact Answers (₹25)'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         )}
@@ -789,28 +850,236 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
                     </div>
                 ) : (
                     <div className="text-left space-y-8 animate-in fade-in">
-                        <div className="flex justify-center mb-4">
-                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-slate-800 rounded-lg border border-slate-700 shadow-lg">
-                                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                                <span className="text-xs font-bold text-slate-300">Session Active: <span className="text-white font-mono">{timeLeft}</span></span>
-                            </div>
-                        </div>
-
                         {!toolkit.recruiterPsychology && (
                             <div className="text-center py-10">
                                 <button onClick={syncElite} disabled={isSyncingElite} className="px-8 py-3 bg-blue-600 text-white font-bold text-sm rounded-xl shadow-lg hover:bg-blue-700">{isSyncingElite ? 'Syncing...' : 'Initialize Elite Tools'}</button>
                             </div>
                         )}
                         {toolkit.recruiterPsychology && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div className="p-8 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800">
-                                    <h4 className="font-black text-blue-600 text-[10px] uppercase mb-4 tracking-widest">Recruiter Psychology</h4>
-                                    <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-sm font-medium whitespace-pre-wrap">{toolkit.recruiterPsychology}</p>
+                            <div className="space-y-8">
+                                {/* 1. Recruiter Psych & Salary (Existing) */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="p-8 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                        <h4 className="font-black text-blue-600 text-[10px] uppercase mb-4 tracking-widest">Recruiter Psychology</h4>
+                                        <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-sm font-medium whitespace-pre-wrap">{toolkit.recruiterPsychology}</p>
+                                    </div>
+                                    <div className="p-8 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                        <h4 className="font-black text-blue-600 text-[10px] uppercase mb-4 tracking-widest">Salary Script</h4>
+                                        <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-sm font-medium whitespace-pre-wrap">{toolkit.salaryNegotiation}</p>
+                                    </div>
                                 </div>
-                                <div className="p-8 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800">
-                                    <h4 className="font-black text-blue-600 text-[10px] uppercase mb-4 tracking-widest">Salary Script</h4>
-                                    <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-sm font-medium whitespace-pre-wrap">{toolkit.salaryNegotiation}</p>
+
+                                {/* 2. Elevator Pitch (Separate Highlighted Section) */}
+                                {toolkit.elevatorPitch && (
+                                    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-1 rounded-2xl shadow-xl">
+                                        <div className="bg-white dark:bg-slate-900 p-8 rounded-xl h-full">
+                                            <div className="flex justify-between items-start mb-6">
+                                                <div>
+                                                    <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">The Perfect Pitch</h3>
+                                                    <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">"Tell Me About Yourself" - Mastered</p>
+                                                </div>
+                                                <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-full">
+                                                    <span className="text-2xl">🎙️</span>
+                                                </div>
+                                            </div>
+                                            <div className="prose dark:prose-invert max-w-none">
+                                                <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-sm font-medium whitespace-pre-wrap border-l-4 border-blue-500 pl-6 italic">
+                                                    {toolkit.elevatorPitch}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* 3. Cold Email Scripts (Downloadable) */}
+                                {toolkit.coldEmails && (
+                                    <div className="bg-slate-50 dark:bg-slate-950 p-8 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                        <div className="flex justify-between items-center mb-6">
+                                            <h4 className="font-black text-blue-600 text-[10px] uppercase tracking-widest">Cold Email Scripts</h4>
+                                            <button 
+                                                onClick={() => downloadPDF(
+                                                    `Hiring Manager:\n\n${toolkit.coldEmails?.hiringManager}\n\n---\n\nPeer Networking:\n\n${toolkit.coldEmails?.peerNetworking}\n\n---\n\nValue Prop:\n\n${toolkit.coldEmails?.valueProposition}`, 
+                                                    'Cold_Email_Scripts.pdf'
+                                                )}
+                                                className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-[10px] font-bold hover:bg-slate-50 transition-colors shadow-sm"
+                                            >
+                                                <DownloadIcon className="w-3 h-3" /> Download All
+                                            </button>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-xs font-bold text-slate-900 dark:text-white">Hiring Manager</span>
+                                                    <CopyButton text={toolkit.coldEmails.hiringManager} />
+                                                </div>
+                                                <div className="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 h-48 overflow-y-auto whitespace-pre-wrap">
+                                                    {toolkit.coldEmails.hiringManager}
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-xs font-bold text-slate-900 dark:text-white">Peer Networking</span>
+                                                    <CopyButton text={toolkit.coldEmails.peerNetworking} />
+                                                </div>
+                                                <div className="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 h-48 overflow-y-auto whitespace-pre-wrap">
+                                                    {toolkit.coldEmails.peerNetworking}
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-xs font-bold text-slate-900 dark:text-white">Value Prop</span>
+                                                    <CopyButton text={toolkit.coldEmails.valueProposition} />
+                                                </div>
+                                                <div className="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 h-48 overflow-y-auto whitespace-pre-wrap">
+                                                    {toolkit.coldEmails.valueProposition}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* 4. 90-Day Plan & Competitor Intel */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    {toolkit.plan90Day && (
+                                        <div className="p-8 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h4 className="font-black text-blue-600 text-[10px] uppercase tracking-widest">First 90 Days Strategy</h4>
+                                                <button onClick={() => downloadPDF(toolkit.plan90Day!, '90_Day_Plan.pdf')} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors"><DownloadIcon className="w-4 h-4"/></button>
+                                            </div>
+                                            <div className="flex-grow p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 whitespace-pre-wrap h-64 overflow-y-auto">
+                                                {toolkit.plan90Day}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {toolkit.competitorAnalysis && (
+                                        <div className="p-8 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h4 className="font-black text-blue-600 text-[10px] uppercase tracking-widest">Competitor Intel (SWOT)</h4>
+                                                <button onClick={() => downloadPDF(toolkit.competitorAnalysis!, 'Competitor_Intel.pdf')} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors"><DownloadIcon className="w-4 h-4"/></button>
+                                            </div>
+                                            <div className="flex-grow p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 whitespace-pre-wrap h-64 overflow-y-auto">
+                                                {toolkit.competitorAnalysis}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
+
+                                {/* 5. LinkedIn Connection Script */}
+                                {toolkit.linkedinConnection && (
+                                    <div className="p-6 bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/40 rounded-2xl flex items-center justify-between gap-4">
+                                        <div className="flex-grow">
+                                            <h4 className="font-black text-blue-600 text-[10px] uppercase mb-2 tracking-widest">LinkedIn Connection Request</h4>
+                                            <p className="text-sm font-medium text-slate-700 dark:text-slate-300 italic">"{toolkit.linkedinConnection}"</p>
+                                        </div>
+                                        <CopyButton text={toolkit.linkedinConnection} />
+                                    </div>
+                                )}
+
+                                {/* 6. Advanced Boolean Search Strings */}
+                                {toolkit.booleanSearchStrings && (
+                                    <div className="bg-slate-900 text-white p-8 rounded-2xl shadow-xl border border-slate-700">
+                                        <h4 className="font-black text-emerald-400 text-[10px] uppercase tracking-widest mb-6 flex items-center gap-2">
+                                            <span>🕵️‍♂️</span> LinkedIn Boolean Search Strings
+                                        </h4>
+                                        <div className="space-y-6">
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-xs font-bold text-slate-400 uppercase">Find Hiring Managers</span>
+                                                    <CopyButton text={toolkit.booleanSearchStrings.hiringManagers} />
+                                                </div>
+                                                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono text-[10px] text-emerald-300 break-all">
+                                                    {toolkit.booleanSearchStrings.hiringManagers}
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-xs font-bold text-slate-400 uppercase">Find Technical Recruiters</span>
+                                                    <CopyButton text={toolkit.booleanSearchStrings.recruiters} />
+                                                </div>
+                                                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono text-[10px] text-blue-300 break-all">
+                                                    {toolkit.booleanSearchStrings.recruiters}
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-xs font-bold text-slate-400 uppercase">Find Peers / Senior Engineers</span>
+                                                    <CopyButton text={toolkit.booleanSearchStrings.peers} />
+                                                </div>
+                                                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono text-[10px] text-purple-300 break-all">
+                                                    {toolkit.booleanSearchStrings.peers}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* 7. Personal Brand Audit & Technical Challenge */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    {toolkit.personalBrandAudit && (
+                                        <div className="p-8 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-2xl border border-purple-100 dark:border-purple-900/40">
+                                            <h4 className="font-black text-purple-600 dark:text-purple-400 text-[10px] uppercase mb-4 tracking-widest flex items-center gap-2">
+                                                <span>✨</span> Personal Brand Audit
+                                            </h4>
+                                            <div className="prose prose-sm dark:prose-invert max-w-none text-xs leading-relaxed whitespace-pre-wrap text-slate-700 dark:text-slate-300">
+                                                {toolkit.personalBrandAudit}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {toolkit.technicalChallenge && (
+                                        <div className="p-8 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800">
+                                            <h4 className="font-black text-slate-600 dark:text-slate-400 text-[10px] uppercase mb-4 tracking-widest flex items-center gap-2">
+                                                <span>💻</span> Technical Challenge Prediction
+                                            </h4>
+                                            <div className="prose prose-sm dark:prose-invert max-w-none text-xs leading-relaxed whitespace-pre-wrap text-slate-700 dark:text-slate-300 font-mono bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                                                {toolkit.technicalChallenge}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 8. Advanced Networking Scripts */}
+                                {toolkit.networkingScripts && (
+                                    <div className="p-8 bg-indigo-50 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-900/40 rounded-2xl mt-8">
+                                        <h4 className="font-black text-indigo-600 dark:text-indigo-400 text-[10px] uppercase mb-6 tracking-widest flex items-center gap-2">
+                                            <span>🤝</span> Advanced Networking Scripts
+                                        </h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-xs font-bold text-slate-500 uppercase">Connection Follow-Up</span>
+                                                    <CopyButton text={toolkit.networkingScripts.connectionFollowUp} />
+                                                </div>
+                                                <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 italic leading-relaxed h-40 overflow-y-auto">
+                                                    "{toolkit.networkingScripts.connectionFollowUp}"
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-xs font-bold text-slate-500 uppercase">Informational Interview</span>
+                                                    <CopyButton text={toolkit.networkingScripts.informationalInterview} />
+                                                </div>
+                                                <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 italic leading-relaxed h-40 overflow-y-auto">
+                                                    "{toolkit.networkingScripts.informationalInterview}"
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-xs font-bold text-slate-500 uppercase">Re-engagement</span>
+                                                    <CopyButton text={toolkit.networkingScripts.reEngagement} />
+                                                </div>
+                                                <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 italic leading-relaxed h-40 overflow-y-auto">
+                                                    "{toolkit.networkingScripts.reEngagement}"
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="mt-6 p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl border border-indigo-200 dark:border-indigo-800 flex gap-3 items-start">
+                                            <span className="text-lg">💡</span>
+                                            <p className="text-[10px] text-indigo-800 dark:text-indigo-200 font-medium leading-relaxed pt-1">
+                                                <strong>Pro Tip:</strong> These scripts are psychological templates. Always customize the <span className="font-mono bg-indigo-200 dark:bg-indigo-800 px-1 rounded">[bracketed]</span> sections with specific details about the person to increase response rates by 300%.
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
 
