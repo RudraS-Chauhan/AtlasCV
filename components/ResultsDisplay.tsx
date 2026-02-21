@@ -614,8 +614,57 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
                     <ResumePreview text={toolkit.resume} template={selectedTemplate} userInput={userInput} isBlurred={isPremium(selectedTemplate) && !isPro} onUnlock={handlePayment} />
                 </div>
 
-                {/* 3. ATS Strategy Lab (Moved to Elite Suite) */}
-                {/* Removed from here */}
+                {/* 3. ATS Strategy Lab (Linked from Elite Tab) */}
+                <div className="bg-slate-50 dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 relative overflow-hidden mt-2">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                        <div>
+                            <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                                <SearchIcon className="w-5 h-5 text-blue-600" /> ATS Neural Scan & Deep Audit
+                            </h3>
+                            <p className="text-xs text-slate-500 font-medium mt-1">Professional-grade analysis against target role requirements.</p>
+                        </div>
+                        <button onClick={runAnalysis} disabled={isAnalyzing} className="px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-bold rounded-xl hover:opacity-90 transition-all disabled:opacity-50">
+                            {isAnalyzing ? 'Auditing...' : 'Run Deep Audit'}
+                        </button>
+                    </div>
+
+                    {analysis && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in text-left">
+                            <div className="bg-white dark:bg-slate-800/50 p-5 rounded-xl border border-slate-200 dark:border-slate-700">
+                                <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Audit Summary</h4>
+                                <p className={`text-sm font-bold leading-relaxed ${analysis.score >= 80 ? 'text-green-600' : (analysis.score >= 60 ? 'text-amber-500' : 'text-red-500')}`}>{analysis.summary}</p>
+                                <div className="mt-4 flex items-baseline gap-1">
+                                    <div className="text-4xl font-black text-slate-900 dark:text-white">{analysis.score}</div>
+                                    <div className="text-[10px] font-bold text-slate-400 uppercase">/ 100</div>
+                                </div>
+                                <p className="text-[10px] text-slate-400 mt-2 italic">Strict evaluation based on provided skills and experience.</p>
+                            </div>
+                            <div className="bg-red-50 dark:bg-red-900/10 p-5 rounded-xl border border-red-100 dark:border-red-900/30">
+                                <h4 className="text-[9px] font-black text-red-500 uppercase tracking-widest mb-3">Critical Gaps & Missing Keywords</h4>
+                                <div className="space-y-3">
+                                    {analysis.missingKeywords.map((k, i) => (
+                                        <div key={i} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-red-100 dark:border-red-900/20 shadow-sm hover:shadow-md transition-all group">
+                                            <div className="flex flex-wrap justify-between items-start gap-2 mb-2">
+                                                <span className="text-xs font-black text-red-600 dark:text-red-400 uppercase tracking-wide flex items-center gap-2">
+                                                    {k.keyword}
+                                                </span>
+                                                {k.context && (
+                                                    <span className="text-[9px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full uppercase tracking-wider border border-slate-200 dark:border-slate-700">
+                                                        {k.context}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            
+                                            <p className="text-[10px] text-slate-600 dark:text-slate-400 leading-relaxed mb-3">
+                                                {k.reason}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
 
                 {/* 4. Elite Suite (Footer) */}
                 <div className="p-6 bg-slate-900 rounded-2xl text-white relative overflow-hidden shadow-lg mt-2">
@@ -819,13 +868,19 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
                 <div className="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm mb-8 flex flex-col md:flex-row gap-4 items-end md:items-center justify-between">
                     <div className="w-full md:w-auto flex-grow">
                         <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Target Role Strategy</label>
-                        <div className="relative">
+                        <div className="flex gap-2">
                             <input 
                                 type="text" 
                                 value={roadmapRole} 
                                 onChange={(e) => setRoadmapRole(e.target.value)}
                                 className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                             />
+                             {isPro && (
+                                <div className="flex items-center gap-2 px-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
+                                    <span className="text-lg">⚡</span>
+                                    <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider whitespace-nowrap">Elite Mode Active</span>
+                                </div>
+                            )}
                         </div>
                     </div>
                     <button 
@@ -880,18 +935,6 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
                         <h2 className="text-2xl font-black text-slate-900 dark:text-white">Elite Strategy Suite</h2>
                         <p className="text-slate-500 text-sm">Unlock recruiter psychology insights, salary negotiation scripts, cold email templates, and custom networking strategies used by top 1% candidates.</p>
                         <button onClick={handlePayment} className="px-8 py-3 bg-blue-600 text-white font-black text-sm rounded-xl shadow-lg hover:scale-105 transition-all">Unlock Full System (₹25)</button>
-                        <div className="mt-4">
-                            <button onClick={() => {
-                                if(confirm("Activate Demo Mode for testing?")) {
-                                    localStorage.setItem('jobHero_pro', 'true');
-                                    localStorage.setItem('jobHero_pro_expiry', (Date.now() + 24 * 60 * 60 * 1000).toString());
-                                    setIsPro(true);
-                                    generateAndSendInvoice("DEMO_TXN_" + Date.now());
-                                }
-                            }} className="text-[10px] text-slate-400 underline hover:text-blue-500">
-                                Demo Unlock (No Charge)
-                            </button>
-                        </div>
                     </div>
                 ) : (
                     <div className="text-left space-y-8 animate-in fade-in">
