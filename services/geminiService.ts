@@ -189,31 +189,36 @@ export const generateEliteTools = async (input: UserInput): Promise<Partial<JobT
        - A scripted, 2-minute narrative using the "Present-Past-Future" framework.
        - Weave the candidate's background, "why this role," and "why this company" into a compelling story.
 
-    5. **First 90 Days Strategy Plan:**
+    5. **"Why This Role?" Strategy:**
+       - Craft a compelling answer to "Why do you want to work here?".
+       - Connect the candidate's specific past achievements to the company's mission/products.
+       - Avoid generic flattery; focus on mutual value and specific company initiatives.
+
+    6. **First 90 Days Strategy Plan:**
        - A 30-60-90 day roadmap the candidate can present during the interview to show high initiative.
 
-    6. **LinkedIn Connection Request:**
+    7. **LinkedIn Connection Request:**
        - Custom 300-character message tailored to the specific target company and role.
 
-    7. **Competitor Intelligence Brief:**
+    8. **Competitor Intelligence Brief:**
        - A quick summary of the target company's top 3 competitors and a "SWOT Analysis" (Strengths, Weaknesses, Opportunities, Threats) to discuss during the interview.
 
-    8. **Advanced Boolean Search Strings (LinkedIn Hacking):**
+    9. **Advanced Boolean Search Strings (LinkedIn Hacking):**
        - Generate 3 complex Boolean search strings to find hidden opportunities.
        - **Hiring Managers:** Find managers, CTOs, and VPs hiring for "${input.jobRoleTarget}" using keywords from "${input.skills}".
        - **Recruiters:** Find technical recruiters specializing in this domain.
        - **Peers:** Find senior engineers/peers at "${input.company}" or similar firms.
 
-    9. **Personal Brand Audit:**
+    10. **Personal Brand Audit:**
        - Analyze the candidate's "Personal Brand" based on their bio and skills.
        - Identify 3 key strengths and 1 critical gap for the target role.
        - Suggest a "Tagline" for their LinkedIn headline.
 
-    10. **Technical Challenge Prediction:**
+    11. **Technical Challenge Prediction:**
         - Predict a likely "Take-Home" technical challenge or System Design question for this role.
         - Provide a high-level solution outline or architectural approach.
 
-    11. **Advanced Networking Scripts:**
+    12. **Advanced Networking Scripts:**
         - **Connection Follow-Up:** A message to send immediately after someone accepts your LinkedIn connection request.
         - **Informational Interview Request:** A humble, high-success rate message to ask a senior professional for 15 mins of advice.
         - **Re-engagement:** A script to warm up a dormant contact you haven't spoken to in a year.
@@ -228,6 +233,7 @@ export const generateEliteTools = async (input: UserInput): Promise<Partial<JobT
         "valueProposition": "Full email text..."
       },
       "elevatorPitch": "Full pitch text...",
+      "whyThisRole": "Full answer text...",
       "plan90Day": "Full plan text...",
       "linkedinConnection": "Full message text...",
       "competitorAnalysis": "Full analysis text...",

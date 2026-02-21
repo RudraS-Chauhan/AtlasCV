@@ -9,19 +9,24 @@ interface RoadmapVisualizerProps {
 }
 
 export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({ steps }) => {
-  const [expandedStep, setExpandedStep] = useState<number | null>(null);
+  const [expandedSteps, setExpandedSteps] = useState<number[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+
+  const toggleStep = (index: number) => {
+    setExpandedSteps(prev => 
+      prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]
+    );
+  };
 
   const handleDownload = async () => {
     if (!containerRef.current) return;
     setIsDownloading(true);
     
     // Allow time for re-render to expand all items
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 800));
     
     try {
-      // Add a temporary class for better capture styling
       containerRef.current.classList.add('capturing');
       
       const canvas = await html2canvas(containerRef.current, {
@@ -31,7 +36,16 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({ steps }) =
         logging: false,
         onclone: (doc) => {
             const el = doc.querySelector('.capturing');
-            if (el) (el as HTMLElement).style.padding = '40px';
+            if (el) {
+                (el as HTMLElement).style.padding = '40px';
+                // Force all details to be visible in the clone if not already
+                const details = el.querySelectorAll('.step-details');
+                details.forEach((d) => {
+                    (d as HTMLElement).style.height = 'auto';
+                    (d as HTMLElement).style.opacity = '1';
+                    (d as HTMLElement).style.display = 'block';
+                });
+            }
         }
       });
       
@@ -69,7 +83,7 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({ steps }) =
 
         <div className="space-y-8 relative">
           {steps.map((step, index) => {
-            const isExpanded = expandedStep === index || isDownloading;
+            const isExpanded = expandedSteps.includes(index) || isDownloading;
             return (
               <motion.div
                 key={index}
@@ -82,7 +96,7 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({ steps }) =
                 <div className="relative z-10 shrink-0 mt-1">
                     {isExpanded && <div className="absolute inset-0 bg-blue-500/30 rounded-full animate-ping" />}
                     <button
-                    onClick={() => setExpandedStep(isExpanded && !isDownloading ? null : index)}
+                    onClick={() => !isDownloading && toggleStep(index)}
                     className={`relative flex items-center justify-center w-6 h-6 md:w-8 md:h-8 rounded-full border-2 transition-all duration-300 ${
                         isExpanded
                         ? 'bg-blue-600 border-blue-600 text-white scale-110 shadow-lg shadow-blue-600/30'
@@ -100,7 +114,7 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({ steps }) =
                   }`}
                 >
                   <div
-                    onClick={() => setExpandedStep(isExpanded && !isDownloading ? null : index)}
+                    onClick={() => !isDownloading && toggleStep(index)}
                     className={`cursor-pointer p-5 rounded-xl border transition-all duration-300 ${
                       isExpanded
                         ? 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800 shadow-md'
@@ -126,17 +140,17 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({ steps }) =
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: 'auto', opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
-                          className="overflow-hidden"
+                          className="overflow-hidden step-details"
                         >
                           <div className="pt-3 mt-3 border-t border-slate-200/50 dark:border-slate-700/50 grid gap-4 md:grid-cols-2">
                             {step.milestones && step.milestones.length > 0 && (
                               <div>
                                 <h5 className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Milestones</h5>
-                                <ul className="space-y-1.5">
+                                <ul className="space-y-2">
                                   {step.milestones.map((m, i) => (
                                     <li key={i} className="flex items-start gap-2 text-[11px] text-slate-600 dark:text-slate-300">
-                                      <span className="w-1 h-1 bg-blue-500 rounded-full mt-1.5 shrink-0" />
-                                      {m}
+                                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1.5 shrink-0 shadow-sm shadow-blue-500/50" />
+                                      <span className="leading-tight">{m}</span>
                                     </li>
                                   ))}
                                 </ul>
@@ -148,7 +162,7 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({ steps }) =
                                 <h5 className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Tools & Tech</h5>
                                 <div className="flex flex-wrap gap-1.5">
                                   {step.tools.map((tool, i) => (
-                                    <span key={i} className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-[10px] font-medium text-slate-600 dark:text-slate-300">
+                                    <span key={i} className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-[10px] font-medium text-slate-600 dark:text-slate-300 shadow-sm">
                                       {tool}
                                     </span>
                                   ))}
@@ -180,7 +194,7 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({ steps }) =
                                                                 <div class="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 dark:border-slate-800 transform scale-100 animate-in zoom-in-95 duration-200 relative overflow-hidden">
                                                                     <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-400 to-orange-600"></div>
                                                                     <div class="text-center space-y-4">
-                                                                        <div class="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-2">
+                                                                        <div class="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-2 animate-bounce">
                                                                             <span class="text-3xl">💎</span>
                                                                         </div>
                                                                         <h3 class="text-2xl font-black text-slate-900 dark:text-white">Unlock Elite Strategy</h3>
@@ -207,8 +221,6 @@ export const RoadmapVisualizer: React.FC<RoadmapVisualizerProps> = ({ steps }) =
                                                             
                                                             document.getElementById('confirm-upgrade')?.addEventListener('click', () => {
                                                                 overlay.remove();
-                                                                // Trigger the actual upgrade flow here
-                                                                // For now, we can simulate a click on the main "Upgrade" button if it exists, or just log it.
                                                                 const mainUpgradeBtn = document.querySelector('button[class*="bg-gradient-to-r from-amber-500"]') as HTMLButtonElement;
                                                                 if(mainUpgradeBtn) mainUpgradeBtn.click();
                                                                 else alert("Redirecting to payment gateway...");

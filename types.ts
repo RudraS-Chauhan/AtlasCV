@@ -91,6 +91,7 @@ export interface JobToolkit {
       valueProposition: string;
   };
   elevatorPitch?: string;
+  whyThisRole?: string;
   plan90Day?: string;
   linkedinConnection?: string;
   competitorAnalysis?: string;

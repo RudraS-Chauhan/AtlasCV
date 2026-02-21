@@ -452,60 +452,62 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
       }
   };
 
-  const downloadPDF = async (text: string, name: string) => {
-      const element = document.getElementById('resume-preview-container');
-      if (!element) {
-          alert("Preview not found. Please try again.");
-          return;
-      }
+    const downloadPDF = async (elementId: string, fileName: string) => {
+        const element = document.getElementById(elementId);
+        if (!element) {
+            alert('Preview not found. Please try again.');
+            return;
+        }
+        
+        try {
+            // Wait for fonts to load
+            await document.fonts.ready;
+            
+            // Clone the element to ensure we capture the full content without scrollbars or hidden overflow
+            const clone = element.cloneNode(true) as HTMLElement;
+            
+            // Reset styles on the clone to ensure full visibility
+            clone.style.position = 'fixed';
+            clone.style.top = '-10000px';
+            clone.style.left = '-10000px';
+            clone.style.width = '850px'; // Standard A4 width approx
+            clone.style.height = 'auto';
+            clone.style.overflow = 'visible';
+            clone.style.maxHeight = 'none';
+            clone.style.transform = 'none';
+            clone.style.zIndex = '-1000';
+            
+            // Remove any blur or opacity classes from the clone
+            clone.classList.remove('blur-sm', 'opacity-90', 'select-none', 'overflow-hidden');
+            
+            // Append to body temporarily
+            document.body.appendChild(clone);
 
-      try {
-          // Wait for fonts to load
-          await document.fonts.ready;
+            const canvas = await html2canvas(clone, {
+                scale: 2, // Higher quality
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff',
+                windowWidth: 850,
+            });
+            
+            // Remove clone
+            document.body.removeChild(clone);
 
-          // Use html2canvas to capture the visual design
-          const canvas = await html2canvas(element, {
-              scale: 3, // Higher scale for better quality (300 DPI equivalent)
-              useCORS: true,
-              logging: false,
-              backgroundColor: '#ffffff',
-              letterRendering: true, // Improve font rendering
-              allowTaint: true,
-          });
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'px',
+                format: [canvas.width, canvas.height]
+            });
 
-          const imgData = canvas.toDataURL('image/png', 1.0); // Max quality
-          const pdf = new jsPDF('p', 'mm', 'a4');
-          const pdfWidth = pdf.internal.pageSize.getWidth();
-          const pdfHeight = pdf.internal.pageSize.getHeight();
-          const imgWidth = canvas.width;
-          const imgHeight = canvas.height;
-          const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-          const imgX = (pdfWidth - imgWidth * ratio) / 2;
-          
-          const componentWidth = pdfWidth;
-          const componentHeight = (imgHeight * pdfWidth) / imgWidth;
-
-          // Multi-page logic
-          let heightLeft = componentHeight;
-          let position = 0;
-          
-          pdf.addImage(imgData, 'PNG', 0, position, componentWidth, componentHeight);
-          heightLeft -= pdfHeight;
-
-          while (heightLeft > 0) {
-            position = heightLeft - componentHeight; // This logic for multi-page is tricky with images
-            // Better approach for long resumes: Add new page and draw remaining part
-            pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, -pdfHeight + (componentHeight - heightLeft), componentWidth, componentHeight); // Shift image up
-            heightLeft -= pdfHeight;
-          }
-
-          pdf.save(name);
-      } catch (error) {
-          console.error("PDF generation failed", error);
-          alert("High-quality PDF generation failed. Please try again or use a different browser.");
-      }
-  };
+            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+            pdf.save(fileName);
+        } catch (error) {
+            console.error('PDF generation failed:', error);
+            alert('High-quality PDF generation failed. Please try again or use a different browser.');
+        }
+    };
 
   const isPremium = (t: TemplateType) => ['Creative', 'Elegant', 'Executive', 'Minimalist', 'Professional'].includes(t);
 
@@ -580,7 +582,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
                             <button onClick={handleShare} disabled={isSharing} className="flex items-center gap-1.5 px-4 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-[10px] font-bold rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm">
                                 <ShareIcon className="w-3.5 h-3.5" /> {isSharing ? 'Generating...' : 'Share Resume'}
                             </button>
-                            <button onClick={() => downloadPDF(toolkit.resume, 'resume.pdf')} className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 text-white text-[10px] font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20">
+                            <button onClick={() => downloadPDF('resume-preview-container', 'resume.pdf')} className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 text-white text-[10px] font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20">
                                 <DownloadIcon className="w-3.5 h-3.5" /> Download PDF
                             </button>
                         </div>
@@ -631,9 +633,9 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
             <div className="animate-in fade-in space-y-6">
                 <div className="flex justify-between items-center">
                     <h3 className="text-xl font-black">Cover Letter</h3>
-                    <button onClick={() => downloadPDF(toolkit.coverLetter, 'cover_letter.pdf')} className="p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl hover:bg-slate-200 transition-colors"><DownloadIcon className="w-4 h-4"/></button>
+                    <button onClick={() => downloadPDF('cover-letter-preview', 'cover_letter.pdf')} className="p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl hover:bg-slate-200 transition-colors"><DownloadIcon className="w-4 h-4"/></button>
                 </div>
-                <div className="w-full h-[600px] p-8 bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-serif leading-7 text-slate-700 dark:text-slate-300 shadow-inner overflow-auto whitespace-pre-wrap">
+                <div id="cover-letter-preview" className="w-full h-[600px] p-8 bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-serif leading-7 text-slate-700 dark:text-slate-300 shadow-inner overflow-auto whitespace-pre-wrap">
                     {toolkit.coverLetter || "Generating cover letter..."}
                 </div>
             </div>
@@ -869,38 +871,57 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
                                     </div>
                                 </div>
 
-                                {/* 2. Elevator Pitch (Separate Highlighted Section) */}
+                                {/* 2. Elevator Pitch & Why This Role (Separate Highlighted Section) */}
                                 {toolkit.elevatorPitch && (
-                                    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-1 rounded-2xl shadow-xl">
-                                        <div className="bg-white dark:bg-slate-900 p-8 rounded-xl h-full">
-                                            <div className="flex justify-between items-start mb-6">
-                                                <div>
-                                                    <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">The Perfect Pitch</h3>
-                                                    <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">"Tell Me About Yourself" - Mastered</p>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-1 rounded-2xl shadow-xl">
+                                            <div className="bg-white dark:bg-slate-900 p-8 rounded-xl h-full">
+                                                <div className="flex justify-between items-start mb-6">
+                                                    <div>
+                                                        <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">The Perfect Pitch</h3>
+                                                        <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">"Tell Me About Yourself" - Mastered</p>
+                                                    </div>
+                                                    <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-full">
+                                                        <span className="text-2xl">🎙️</span>
+                                                    </div>
                                                 </div>
-                                                <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-full">
-                                                    <span className="text-2xl">🎙️</span>
+                                                <div className="prose dark:prose-invert max-w-none">
+                                                    <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-sm font-medium whitespace-pre-wrap border-l-4 border-blue-500 pl-6 italic">
+                                                        {toolkit.elevatorPitch}
+                                                    </p>
                                                 </div>
-                                            </div>
-                                            <div className="prose dark:prose-invert max-w-none">
-                                                <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-sm font-medium whitespace-pre-wrap border-l-4 border-blue-500 pl-6 italic">
-                                                    {toolkit.elevatorPitch}
-                                                </p>
                                             </div>
                                         </div>
+                                        {toolkit.whyThisRole && (
+                                            <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-1 rounded-2xl shadow-xl">
+                                                <div className="bg-white dark:bg-slate-900 p-8 rounded-xl h-full">
+                                                    <div className="flex justify-between items-start mb-6">
+                                                        <div>
+                                                            <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Why This Role?</h3>
+                                                            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Strategic Alignment</p>
+                                                        </div>
+                                                        <div className="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-full">
+                                                            <span className="text-2xl">🎯</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="prose dark:prose-invert max-w-none">
+                                                        <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-sm font-medium whitespace-pre-wrap border-l-4 border-purple-500 pl-6 italic">
+                                                            {toolkit.whyThisRole}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 
                                 {/* 3. Cold Email Scripts (Downloadable) */}
                                 {toolkit.coldEmails && (
-                                    <div className="bg-slate-50 dark:bg-slate-950 p-8 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                    <div id="cold-emails-section" className="bg-slate-50 dark:bg-slate-950 p-8 rounded-2xl border border-slate-100 dark:border-slate-800">
                                         <div className="flex justify-between items-center mb-6">
                                             <h4 className="font-black text-blue-600 text-[10px] uppercase tracking-widest">Cold Email Scripts</h4>
                                             <button 
-                                                onClick={() => downloadPDF(
-                                                    `Hiring Manager:\n\n${toolkit.coldEmails?.hiringManager}\n\n---\n\nPeer Networking:\n\n${toolkit.coldEmails?.peerNetworking}\n\n---\n\nValue Prop:\n\n${toolkit.coldEmails?.valueProposition}`, 
-                                                    'Cold_Email_Scripts.pdf'
-                                                )}
+                                                onClick={() => downloadPDF('cold-emails-section', 'Cold_Email_Scripts.pdf')}
                                                 className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-[10px] font-bold hover:bg-slate-50 transition-colors shadow-sm"
                                             >
                                                 <DownloadIcon className="w-3 h-3" /> Download All
@@ -944,9 +965,9 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
                                         <div className="p-8 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col">
                                             <div className="flex justify-between items-center mb-4">
                                                 <h4 className="font-black text-blue-600 text-[10px] uppercase tracking-widest">First 90 Days Strategy</h4>
-                                                <button onClick={() => downloadPDF(toolkit.plan90Day!, '90_Day_Plan.pdf')} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors"><DownloadIcon className="w-4 h-4"/></button>
+                                                <button onClick={() => downloadPDF('plan-90-day', '90_Day_Plan.pdf')} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors"><DownloadIcon className="w-4 h-4"/></button>
                                             </div>
-                                            <div className="flex-grow p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 whitespace-pre-wrap h-64 overflow-y-auto">
+                                            <div id="plan-90-day" className="flex-grow p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 whitespace-pre-wrap h-64 overflow-y-auto">
                                                 {toolkit.plan90Day}
                                             </div>
                                         </div>
@@ -955,9 +976,9 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ toolkit, userInput, onR
                                         <div className="p-8 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col">
                                             <div className="flex justify-between items-center mb-4">
                                                 <h4 className="font-black text-blue-600 text-[10px] uppercase tracking-widest">Competitor Intel (SWOT)</h4>
-                                                <button onClick={() => downloadPDF(toolkit.competitorAnalysis!, 'Competitor_Intel.pdf')} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors"><DownloadIcon className="w-4 h-4"/></button>
+                                                <button onClick={() => downloadPDF('competitor-analysis', 'Competitor_Intel.pdf')} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors"><DownloadIcon className="w-4 h-4"/></button>
                                             </div>
-                                            <div className="flex-grow p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 whitespace-pre-wrap h-64 overflow-y-auto">
+                                            <div id="competitor-analysis" className="flex-grow p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 whitespace-pre-wrap h-64 overflow-y-auto">
                                                 {toolkit.competitorAnalysis}
                                             </div>
                                         </div>
