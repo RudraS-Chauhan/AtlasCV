@@ -149,11 +149,15 @@ export default function Home() {
 
   useEffect(() => {
     const initSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          router.push('/login');
+        } else {
+          setUser(session.user);
+        }
+      } catch (err) {
         router.push('/login');
-      } else {
-        setUser(session.user);
       }
       setIsInitializing(false);
     };
@@ -172,7 +176,9 @@ export default function Home() {
   }, [router, supabase]);
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {}
     router.push('/login');
   };
 
