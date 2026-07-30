@@ -5,7 +5,7 @@ import {
   Copy, Check, Sparkles, FileText, Linkedin, Mail, X, LogOut, 
   Loader2, AlertCircle, CheckCircle2, TrendingUp, ChevronDown, 
   ChevronUp, AlertTriangle, Download, BookOpen, Send, RefreshCw, 
-  Sliders, Eye, Layers, Info
+  Sliders, Eye, Layers, Info, Save, Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { createClient } from '@/utils/supabase/client';
@@ -146,6 +146,70 @@ export default function Home() {
   const [resumeTheme, setResumeTheme] = useState<'light' | 'dark'>('light');
   const [completedRecommendations, setCompletedRecommendations] = useState<Record<string, boolean>>({});
   const [studiedQuestions, setStudiedQuestions] = useState<Record<string, boolean>>({});
+
+  // Auto-save raw input states
+  const [lastAutoSaved, setLastAutoSaved] = useState<string | null>(null);
+  const [isAutoSaving, setIsAutoSaving] = useState<boolean>(false);
+
+  // Restore raw input data from localStorage on initial mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('atlascv_raw_inputs');
+      if (saved) {
+        const data = JSON.parse(saved);
+        if (data.input !== undefined) setInput(data.input);
+        if (data.targetCompany !== undefined) setTargetCompany(data.targetCompany);
+        if (data.targetRole !== undefined) setTargetRole(data.targetRole);
+        if (data.jobDescription !== undefined) setJobDescription(data.jobDescription);
+        if (data.savedAt) setLastAutoSaved(data.savedAt);
+      }
+    } catch (e) {
+      console.error('Failed to restore auto-saved inputs:', e);
+    }
+  }, []);
+
+  // Auto-save raw input data to localStorage on input changes
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    setIsAutoSaving(true);
+    const timer = setTimeout(() => {
+      try {
+        const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const draft = {
+          input,
+          targetCompany,
+          targetRole,
+          jobDescription,
+          savedAt: timeStr
+        };
+        if (input.trim() || targetCompany.trim() || targetRole.trim() || jobDescription.trim()) {
+          localStorage.setItem('atlascv_raw_inputs', JSON.stringify(draft));
+          setLastAutoSaved(timeStr);
+        } else {
+          localStorage.removeItem('atlascv_raw_inputs');
+          setLastAutoSaved(null);
+        }
+      } catch (e) {
+        console.error('Failed to auto-save inputs:', e);
+      } finally {
+        setIsAutoSaving(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [input, targetCompany, targetRole, jobDescription]);
+
+  const handleClearDraft = () => {
+    setInput('');
+    setTargetCompany('');
+    setTargetRole('');
+    setJobDescription('');
+    try {
+      localStorage.removeItem('atlascv_raw_inputs');
+      setLastAutoSaved(null);
+    } catch (e) {}
+  };
 
   useEffect(() => {
     const initSession = async () => {
@@ -530,9 +594,37 @@ export default function Home() {
                   <Sliders className="w-3.5 h-3.5 text-green-500" />
                   {content ? 'Refine Parameters' : 'Career Details Dump'}
                 </label>
-                {!content && (
-                  <span className="text-xs text-gray-500 font-mono">1-click samples:</span>
-                )}
+                <div className="flex items-center gap-2">
+                  {(input || targetCompany || targetRole || jobDescription) && (
+                    <>
+                      <div className="flex items-center gap-1 text-[10px] text-gray-400 font-mono bg-white/[0.03] border border-white/5 px-2 py-0.5 rounded-md">
+                        {isAutoSaving ? (
+                          <>
+                            <Loader2 className="w-3 h-3 text-yellow-400 animate-spin" />
+                            <span className="text-yellow-400">Saving...</span>
+                          </>
+                        ) : lastAutoSaved ? (
+                          <>
+                            <Save className="w-3 h-3 text-green-400" />
+                            <span className="text-gray-300">Auto-saved <span className="text-gray-500">{lastAutoSaved}</span></span>
+                          </>
+                        ) : null}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleClearDraft}
+                        className="text-[10px] font-mono text-gray-500 hover:text-red-400 transition-colors flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-white/5"
+                        title="Clear all draft fields"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>Clear draft</span>
+                      </button>
+                    </>
+                  )}
+                  {!content && !(input || targetCompany || targetRole || jobDescription) && (
+                    <span className="text-xs text-gray-500 font-mono">1-click samples:</span>
+                  )}
+                </div>
               </div>
 
               {/* Presets - Only show when form is fresh or if they want to load them */}
@@ -576,7 +668,10 @@ export default function Home() {
                     maxLength={3000}
                   />
                   <div className="flex justify-between items-center mt-1 text-[10px] text-gray-500 font-mono">
-                    <span>No structured forms needed</span>
+                    <span className="flex items-center gap-1">
+                      <Save className="w-3 h-3 text-green-500/60" />
+                      Auto-saved to browser storage
+                    </span>
                     <span>{input.length}/3000 characters</span>
                   </div>
                 </div>
